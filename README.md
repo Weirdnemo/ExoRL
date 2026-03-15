@@ -1,306 +1,211 @@
-# 🪐 Planet-RL Sandbox
+# 🪐 Planet-RL — Planetary Science & Mission Design Toolkit
 
-> A procedural planet generation and orbital mechanics sandbox for training reinforcement learning agents to perform orbital insertion across any planet in the universe.
-
----
-
-## Overview
-
-**Planet-RL** is a pure-Python simulation environment purpose-built for RL generalisation research. The core challenge: train a single agent that can perform orbital insertion around a planet it has never seen before — with no retraining, no fine-tuning.
-
-Every planetary feature is independently toggleable: atmosphere, terrain, magnetic field, gravity harmonics (J2/J3), and moons. This makes it trivial to implement staged curriculum training — start with a fixed, simple world and progressively introduce complexity as the agent improves.
-
-The five solar system analogue presets (Earth, Mars, Venus, Moon, Titan) let you validate that the physics models behave correctly before switching to random generation.
+> A procedural planet simulation, orbital mechanics sandbox, and planetary science workbench — built for RL research but grown into a full scientific toolkit.
 
 ---
 
-## Project Structure
+## Table of Contents
+
+1. [What This Is](#1-what-this-is)
+2. [Project Structure](#2-project-structure)
+3. [Installation](#3-installation)
+4. [Quick Start](#4-quick-start)
+5. [Module Reference](#5-module-reference)
+   - [5.1 Planet & Generator](#51-planet--generator-coreplanetpy-coregeneratorpy)
+   - [5.2 Interior Model](#52-interior-model-coreinteriorpy)
+   - [5.3 Stars](#53-stars-corestarpy)
+   - [5.4 Atmosphere Science](#54-atmosphere-science-coreatmosphere_sciencepy)
+   - [5.5 Habitability Assessment](#55-habitability-assessment-corehabitabilitypy)
+   - [5.6 Orbital Analysis](#56-orbital-analysis-coreorbital_analysispy)
+   - [5.7 Ground Track & Coverage](#57-ground-track--coverage-coreground_trackpy)
+   - [5.8 Surface Energy](#58-surface-energy-coresurface_energypy)
+   - [5.9 Tidal Dynamics](#59-tidal-dynamics-coretidалpy)
+   - [5.10 Mission Design](#510-mission-design-coremissionpy)
+   - [5.11 RL Environment](#511-rl-environment-coreenvpy)
+   - [5.12 Visualisation](#512-visualisation-visualizationvisualizerpy)
+6. [Science Demo Script](#6-science-demo-script)
+7. [Visualisations](#7-visualisations)
+8. [Physics & Calibration Notes](#8-physics--calibration-notes)
+9. [RL Training Guide](#9-rl-training-guide)
+10. [TODO & Roadmap](#10-todo--roadmap)
+11. [Dependencies](#11-dependencies)
+12. [License](#12-license)
+
+---
+
+## 1. What This Is
+
+Planet-RL started as a reinforcement learning training environment for orbital insertion manoeuvres. It has since grown into a comprehensive planetary science and mission design toolkit — **~7,000 lines of physics code** across 13 core modules.
+
+The project sits at the intersection of three domains:
+
+- **Planetary science** — physically self-consistent planet models where interior structure drives magnetic fields, J2 drives orbital precession, and atmospheric composition drives surface temperature
+- **Mission engineering** — orbital design (sun-synchronous, frozen, repeat ground-track), aerobraking campaigns, full ΔV budgets, Lambert transfers, porkchop plots
+- **RL research** — a full Gymnasium-compatible environment for generalisation across procedurally generated planets
+
+The guiding principle is that **every derived quantity is computed, not hand-set**. J2 comes from the moment of inertia and rotation rate. The magnetic field comes from the dynamo scaling law applied to the iron core. Surface temperature comes from stellar flux plus greenhouse forcing. Nothing is a magic number.
+
+---
+
+## 2. Project Structure
 
 ```
 Planet-RL/
-├── demo.py                    # Standalone demo — run this first
-├── test_planets.py            # Full figure generation suite
+├── science_demo.py             ← Run this to see everything working
+├── test_planets.py             ← RL-era planet visualisation suite
+├── demo.py                     ← Original RL demo
 ├── README.md
 │
-├── core/
-│   ├── __init__.py            # Full public API surface
-│   ├── planet.py              # Planet dataclass + 5 sub-system configs + physics helpers
-│   ├── generator.py           # PlanetGenerator class + 5 real-world presets
-│   ├── physics.py             # SpacecraftState, OrbitalIntegrator, RK4/RK45
-│   └── env.py                 # Gymnasium-compatible OrbitalInsertionEnv
+├── core/                       ← All physics and science
+│   ├── planet.py               Planet dataclass + sub-systems + orbital helpers
+│   ├── generator.py            Procedural generator + 5 real-world presets
+│   ├── interior.py             Layered interior model: MoI, J2, dynamo, heat flux
+│   ├── star.py                 Stellar model: HZ, XUV flux, spectral classification
+│   ├── atmosphere_science.py   Multi-layer atm, Jeans escape, greenhouse model
+│   ├── habitability.py         10-factor habitability assessment + report
+│   ├── orbital_analysis.py     J2 rates, sun-sync, frozen orbit, drag, station-keep
+│   ├── ground_track.py         Sub-satellite track, coverage maps, pass finder
+│   ├── surface_energy.py       Insolation maps, temperature maps, polar ice
+│   ├── tidal.py                Tidal heating, locking, Roche limit, migration
+│   ├── mission.py              ΔV budgets, aerobraking, Lambert solver, porkchop
+│   ├── physics.py              RK4 integrator, SpacecraftState, orbital elements
+│   ├── env.py                  Gymnasium RL environment
+│   └── __init__.py             Unified public API
 │
 ├── visualization/
-│   ├── __init__.py
-│   └── visualizer.py          # 5 publication-ready plot functions, Wong palette
+│   ├── visualizer.py           Publication-quality plot functions (Wong palette)
+│   └── __init__.py
 │
-└── figures/                   # Output from test_planets.py
-    ├── fig1a_preset_crosssec.png
-    ├── fig1b_preset_atm.png
-    ├── fig2a_random_crosssec.png
-    ├── fig2b_random_atm.png
-    ├── fig3_atm_zoo.png
-    ├── fig4_airless.png
-    ├── fig5_toggle.png
-    └── fig6_batch.png
+├── figures/                    ← Output from test_planets.py (RL-era)
+└── science_figures/            ← Output from science_demo.py (10 figures)
+    ├── fig01_solar_system_comparison.png
+    ├── fig02_interior_profiles.png
+    ├── fig03_star_habitable_zones.png
+    ├── fig04_atmosphere_science.png
+    ├── fig05_habitability_radar.png
+    ├── fig06_orbital_mechanics.png
+    ├── fig07_ground_track_coverage.png
+    ├── fig08_surface_energy.png
+    ├── fig09_tidal_dynamics.png
+    └── fig10_mission_design.png
 ```
 
 ---
 
-## Installation
+## 3. Installation
 
-No compiled extensions, no simulation framework. Pure Python.
+No compiled extensions. No GPU. Pure Python.
 
 ```bash
-pip install numpy matplotlib gymnasium
+# Required
+pip install numpy matplotlib
+
+# For the RL environment
+pip install gymnasium
+
+# Python 3.9+ recommended
 ```
 
-**Python 3.9+** recommended. `gymnasium` is optional — `env.py` stubs gracefully without it so the rest of the codebase still imports fine.
-
----
-
-## Quick Start
+All scripts must be run from the `Planet-RL/` root directory:
 
 ```bash
 cd Planet-RL
-
-# Run the demo (prints planet summaries, simulates an insertion burn)
-python demo.py
-
-# Generate all figures to ./figures/
-python test_planets.py
-```
-
-All scripts must be run from the `Planet-RL/` root directory since imports use the flat `core.*` style.
-
----
-
-## Architecture
-
-Planet-RL is structured in four layers that each build on the one below:
-
-```
-OrbitalInsertionEnv        ← Gymnasium interface: obs, action, reward, reset
-        ↓
-OrbitalIntegrator          ← RK4 physics loop: gravity + thrust + drag + heating
-        ↓
-Planet                     ← Physical model: gravity, atmosphere, J2, moons
-        ↓
-PlanetGenerator / PRESETS  ← Planet construction: procedural or preset
+python science_demo.py
 ```
 
 ---
 
-## 1. The Planet Model (`core/planet.py`)
+## 4. Quick Start
 
-A `Planet` is a dataclass with five independently toggleable sub-systems. Every sub-system has an `enabled: bool` flag — when `False`, that system contributes nothing to the simulation and costs nothing to evaluate.
+### Run the full science demo (recommended first step)
 
-### Core Physical Parameters
-
-| Parameter | Type | Description |
-|---|---|---|
-| `name` | `str` | Display name |
-| `radius` | `float` | Planet radius in metres |
-| `mass` | `float` | Planet mass in kg |
-| `rotation_period` | `float` | Sidereal day in seconds (negative = retrograde) |
-
-### Read-Only Derived Properties
-
-```python
-planet.mu                     # G·M  [m³/s²]
-planet.surface_gravity        # μ/R²  [m/s²]
-planet.escape_velocity        # √(2μ/R)  [m/s]
-planet.first_cosmic_velocity  # √(μ/R)  [m/s]  — minimum orbital speed at surface
-planet.mean_density           # M / (4/3·π·R³)  [kg/m³]
-planet.volume                 # m³
-planet.surface_area           # m²
+```bash
+python science_demo.py
 ```
 
-### Orbital Mechanics Helpers
+Produces 10 figures in `./science_figures/` and prints a summary of key science numbers. Takes ~30 seconds.
+
+### Characterise a planet
 
 ```python
-from core import PRESETS
-
-mars = PRESETS["mars"]()
-
-# Circular orbit parameters at 300 km altitude
-v_circ = mars.circular_orbit_speed(300_000)   # → 3407.7 m/s
-T_orb  = mars.circular_orbit_period(300_000)  # → 6887.5 s  (~115 min)
-
-# Hohmann transfer delta-v from 200 km parking orbit to 500 km target
-dv_depart, dv_arrive = mars.hohmann_delta_v(200_000, 500_000)
-
-# Point-mass gravity at altitude
-g_80km = mars.gravity_at_altitude(80_000)     # → 3.57 m/s²
-
-# Full J2-perturbed gravity vector in ECI frame
-gx, gy, gz = mars.gravity_vector_J2((rx, ry, rz))
-
-# Aerodynamic deceleration at 50 km, 5 km/s
-a_drag = mars.aerobraking_deceleration(
-    altitude=50_000, speed=5000,
-    Cd=2.2, area=10.0, sc_mass=1000.0
-)
-
-# Atmosphere queries at any altitude
-rho  = mars.atmosphere.density_at_altitude(30_000)     # kg/m³
-pres = mars.atmosphere.pressure_at_altitude(30_000)    # Pa
-temp = mars.atmosphere.temperature_at_altitude(30_000) # K
-
-# Print a full summary
-print(mars.summary())
-# ═══ Mars ═══
-#   Radius          : 3389.5 km  (0.532 R⊕)
-#   Mass            : 6.417e+23 kg  (0.107 M⊕)
-#   Surface gravity : 3.728 m/s²
-#   Escape velocity : 5.027 km/s
-#   ...
-```
-
----
-
-### 1a. Atmosphere Sub-system (`AtmosphereConfig`)
-
-Seven named compositions, each calibrated to a real solar system body, with ±30% stochastic jitter applied during random generation.
-
-| Composition | Analogue | P₀ (Pa) | ρ₀ (kg/m³) | H (km) | T₀ (K) |
-|---|---|---|---|---|---|
-| `EARTH_LIKE` | Earth | 101,325 | 1.225 | 8.5 | 288 |
-| `CO2_THIN` | Mars | 636 | 0.015 | 10.8 | 210 |
-| `CO2_THICK` | Venus | 9,200,000 | 65.0 | 15.0 | 737 |
-| `METHANE` | Titan | 146,700 | 5.3 | 40.0 | 94 |
-| `NITROGEN` | Inert world | 101,325 | 1.16 | 9.0 | 300 |
-| `HYDROGEN` | Gas giant envelope | 100,000 | 0.09 | 27.0 | 165 |
-| `NONE` | Vacuum | — | 0 | — | — |
-
-**Physical models:**
-
-- **Density:** `ρ(h) = ρ₀ · exp(−h / H)`  (exponential scale height)
-- **Pressure:** `P(h) = P₀ · exp(−h / H)`
-- **Temperature:** linear lapse at rate `Γ` up to tropopause, isothermal above
-- **Drag force:** `F = ½ρv²·Cd·A·drag_coeff_multiplier`
-- **Aeroheating:** Sutton-Graves: `q̇ = k·√ρ·v³`
-
-Additional atmosphere fields:
-
-```python
-planet.atmosphere.wind_enabled         # bool
-planet.atmosphere.wind_speed_mps       # m/s
-planet.atmosphere.wind_direction_deg   # degrees
-planet.atmosphere.drag_coeff_multiplier  # global scale on all drag
-```
-
-![Preset atmosphere profiles](figures/fig1b_preset_atm.png)
-
-*Density (orange), pressure (blue), and temperature (green) profiles for all five presets. Note the dramatic scale differences: Venus has a surface density 53× denser than Earth and a pressure over 90× higher. Titan has a very tall atmosphere relative to its tiny radius. The Moon shows "no atmosphere" — the integrator returns zero drag whenever `atmosphere.enabled = False`.*
-
----
-
-### 1b. Terrain Sub-system (`TerrainConfig`)
-
-Five archetypes. Terrain affects the visual appearance of cross-section plots and provides elevation data for low-altitude trajectory analysis.
-
-| Terrain type | Character |
-|---|---|
-| `FLAT` | Minimal topography, very low roughness |
-| `CRATERED` | Impact-dominated, moderate roughness |
-| `MOUNTAINOUS` | High elevation variance, jagged |
-| `OCEANIC` | Average elevation below zero, smooth |
-| `VOLCANIC` | Extreme relief, volcanic province texture |
-| `RANDOM` | Randomly selected at generation time |
-
-```python
-from core import TerrainType
-
-planet = gen.generate(
-    name="Hellworld",
-    terrain_enabled=True,
-    terrain_type=TerrainType.VOLCANIC,
-)
-
-planet.terrain.max_elevation   # m  (highest peak)
-planet.terrain.min_elevation   # m  (deepest trench, negative)
-planet.terrain.roughness       # 0.0 (glassy) → 1.0 (extreme)
-```
-
-![Airless world terrain archetypes](figures/fig4_airless.png)
-
-*Four terrain types with atmosphere disabled. Surface colour reflects the terrain archetype. The volcanic world has a red core (high mean density > 5000 kg/m³). All four are drawn to scale relative to each other using `ref_radius`.*
-
----
-
-### 1c. Magnetic Field Sub-system (`MagneticFieldConfig`)
-
-| Strength | Character |
-|---|---|
-| `NONE` | No field |
-| `WEAK` | Remnant crustal field (~10% Earth) |
-| `MEDIUM` | Full dipole field (Earth-like) |
-| `STRONG` | Giant planet magnetosphere |
-
-```python
-planet.magnetic_field.enabled
-planet.magnetic_field.strength             # MagneticFieldStrength enum
-planet.magnetic_field.tilt_deg            # dipole tilt from rotation axis (0–30°)
-planet.magnetic_field.radiation_belt_enabled
-planet.magnetic_field.inner_belt_altitude  # m
-planet.magnetic_field.outer_belt_altitude  # m
-```
-
-When enabled, the magnetic field is visualised as blue arcs in cross-section plots. Radiation belts are a metadata flag for future spacecraft charging models.
-
----
-
-### 1d. Oblateness Sub-system (`OblatenessConfig`)
-
-Full J2 (and J3) gravity harmonic support. When enabled, `gravity_vector_J2()` returns the perturbed acceleration, causing the characteristic nodal precession and apsidal drift that a real agent would need to account for.
-
-```python
-planet.oblateness.J2          # e.g. 1.08263e-3 for Earth
-planet.oblateness.J3          # e.g. -2.53e-6 for Earth
-planet.oblateness.flattening  # (a - c) / a
-```
-
-During random generation, J2 scales with rotation rate: fast-spinning planets become more oblate, matching the physics of centrifugal flattening.
-
----
-
-### 1e. Moons Sub-system (`MoonConfig`)
-
-N-body gravitational perturbations from up to 5 moons. Moon count is sampled from a weighted distribution (1 moon most likely, 5 least likely).
-
-```python
-planet.moons.count          # 1–5
-planet.moons.mass_fraction  # moon mass / planet mass
-planet.moons.orbit_radius   # semi-major axis [m]
-```
-
-In cross-section plots, up to 3 moons are shown as small grey dots at scaled orbital distance.
-
----
-
-## 2. Planet Generator (`core/generator.py`)
-
-### Five Real-World Presets
-
-```python
-from core import PRESETS
+from core import PRESETS, InteriorConfig, star_sun, AU
+from core.habitability import assess_habitability
 
 earth = PRESETS["earth"]()
-mars  = PRESETS["mars"]()
-venus = PRESETS["venus"]()
-moon  = PRESETS["moon"]()
-titan = PRESETS["titan"]()
+earth.interior = InteriorConfig.earth_like()
+earth.star_context = star_sun()
+earth.orbital_distance_m = 1.0 * AU
+
+# Full habitability report
+ha = assess_habitability(earth, earth.star_context, earth.orbital_distance_m)
+print(ha.report())
+# → Overall score: 0.842 (Grade A)
+# → Surface temp: 292 K, liquid water stable, atmosphere retained...
 ```
 
-All preset values match published planetary data. Earth has J2 = 1.08263×10⁻³, flattening = 1/298.257, one moon at 384,400 km, medium magnetic field with radiation belts. Mars has J2 = 1.960×10⁻³, two moons, no magnetic field.
+### Design a science orbit
 
-![Preset cross-sections drawn to scale](figures/fig1a_preset_crosssec.png)
+```python
+from core import PRESETS
+from core.orbital_analysis import OrbitDesign
+from core.star import star_sun, AU
 
-*All five presets drawn to scale using `ref_radius = max(p.radius for p in presets)`. Earth and Venus are nearly identical in size. Mars is about half Earth's radius. The Moon and Titan are both small — Titan slightly larger. Earth's magnetic field arcs are visible. Mars and Moon have no arcs (field disabled). The lone moon of Earth is shown as a dot at scaled distance.*
+mars = PRESETS["mars"]()
+T_mars_year = star_sun().orbital_period(1.524 * AU)
+
+design = OrbitDesign("Mars", altitude_km=400, inclination_deg=93.0,
+                     stellar_orbital_period_s=T_mars_year)
+design.compute(mars)
+print(design.report())
+# → Sun-sync inclination: 92.91°  ✓
+# → Frozen eccentricity:  0.00089
+# → Drag lifetime:        indefinite (thin Martian atm at 400 km)
+# → Annual station-keep:  2.4 m/s/yr
+```
+
+### Plan a mission
+
+```python
+from core import PRESETS
+from core.mission import build_mission_dv_budget, plan_aerobraking
+from core.star import star_sun, AU
+
+mars = PRESETS["mars"]()
+budget = build_mission_dv_budget(
+    mars, star_sun(), 1.524 * AU,
+    approach_vinf_km_s=2.5,
+    target_altitude_km=300,
+    use_aerobraking=True,
+    station_keeping_years=5
+)
+print(budget.report())
+# → Total ΔV: 2930 m/s
+# → Capture: 1956 m/s, Station-keep: 44 m/s, Disposal: 50 m/s...
+```
 
 ---
 
-### Procedural Generation
+## 5. Module Reference
+
+### 5.1 Planet & Generator (`core/planet.py`, `core/generator.py`)
+
+The foundational data model. A `Planet` has five independently toggleable sub-systems (atmosphere, terrain, magnetic field, oblateness, moons) plus optional `interior` and `star_context` attachments that enable derived physics.
+
+#### Five real-world presets
+
+```python
+from core import PRESETS
+
+earth = PRESETS["earth"]()   # R=6371 km, M=5.972e24 kg, N₂/O₂, 1 moon, J2
+mars  = PRESETS["mars"]()    # R=3390 km, CO₂ thin, 2 moons, J2
+venus = PRESETS["venus"]()   # R=6052 km, CO₂ thick (93 bar), no moon
+moon  = PRESETS["moon"]()    # R=1737 km, airless, J2
+titan = PRESETS["titan"]()   # R=2575 km, CH₄/N₂ atmosphere
+
+print(earth.summary())       # prints all physical parameters
+```
+
+#### Procedural generation
 
 ```python
 from core import PlanetGenerator, AtmosphereComposition, TerrainType
@@ -311,739 +216,1078 @@ gen = PlanetGenerator(seed=42)
 planet = gen.generate(
     name="Zephyria",
     atmosphere_enabled=True,
+    atmosphere_composition=AtmosphereComposition.EARTH_LIKE,
     terrain_enabled=True,
+    terrain_type=TerrainType.MOUNTAINOUS,
     magnetic_field_enabled=True,
     oblateness_enabled=True,
     moons_enabled=True,
+    radius_range=(0.8 * 6.371e6, 1.6 * 6.371e6),
+    density_range=(4500, 6000),
 )
 
-# Airless rock — good for curriculum Stage 1
-barren = gen.generate(
-    name="Barren-IV",
-    atmosphere_enabled=False,
-    terrain_enabled=True,
-    magnetic_field_enabled=False,
-    oblateness_enabled=False,
-    moons_enabled=False,
-)
-
-# Lock to a specific atmosphere composition
-titan_clone = gen.generate(
-    name="Titan-2",
-    atmosphere_enabled=True,
-    atmosphere_composition=AtmosphereComposition.METHANE,
-)
-
-# Lock to a specific terrain type
-volcanic = gen.generate(
-    name="Hellworld",
-    terrain_enabled=True,
-    terrain_type=TerrainType.VOLCANIC,
-)
-
-# Constrain the physical size and density
-dense_dwarf = gen.generate(
-    name="Ironcore",
-    radius_range=(0.2 * 6.371e6, 0.6 * 6.371e6),  # 0.2–0.6 R⊕
-    density_range=(7000, 9500),                     # iron-core densities
-    atmosphere_enabled=False,
-)
+# Batch of 500 planets for training or statistics
+planets = gen.batch(500, atmosphere_enabled=True, oblateness_enabled=True)
 ```
 
-### `generate()` — Full Parameter Reference
-
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `name` | `str` | `"Random-Planet"` | Planet display name |
-| `radius_range` | `tuple[float, float]` | `(0.1·R⊕, 4·R⊕)` | Radius bounds in metres |
-| `density_range` | `tuple[float, float]` | `(1500, 8000)` | Mean density bounds in kg/m³ |
-| `atmosphere_enabled` | `bool` | `True` | Enable atmosphere sub-system |
-| `atmosphere_composition` | `AtmosphereComposition \| None` | `None` (random) | Pin to specific composition |
-| `allow_no_atmosphere` | `bool` | `True` | Allow small planets to have no atmosphere |
-| `terrain_enabled` | `bool` | `True` | Enable terrain sub-system |
-| `terrain_type` | `TerrainType \| None` | `None` (random) | Pin to specific terrain type |
-| `magnetic_field_enabled` | `bool` | `False` | Enable magnetic field |
-| `oblateness_enabled` | `bool` | `False` | Enable J2/J3 gravity harmonics |
-| `moons_enabled` | `bool` | `False` | Enable moon perturbations |
-| `rotation_enabled` | `bool` | `True` | Enable rotation (for J2 scaling) |
-| `retrograde_allowed` | `bool` | `True` | Allow retrograde rotation |
-| `tidally_locked_allowed` | `bool` | `True` | Allow tidal locking |
-| `terrain_seed` | `int \| None` | `None` | Override RNG seed for terrain |
-
-### Batch Generation
+#### Key derived properties
 
 ```python
-# 1000 planets for curriculum training
-planets = gen.batch(
-    1000,
-    atmosphere_enabled=True,
-    oblateness_enabled=True,
-    moons_enabled=False,
-)
-# → list of Planet objects named "Planet-001" through "Planet-1000"
+planet.mu                    # G·M [m³/s²]
+planet.surface_gravity       # μ/R² [m/s²]
+planet.escape_velocity        # √(2μ/R) [m/s]
+planet.mean_density           # kg/m³
+planet.circular_orbit_speed(300_000)    # m/s at 300 km
+planet.circular_orbit_period(300_000)   # s
+planet.hohmann_delta_v(200_000, 500_000)  # (dv1, dv2) m/s
+planet.gravity_vector_J2((x, y, z))     # J2-perturbed acceleration
 ```
 
-![Six random planets drawn to scale](figures/fig2a_random_crosssec.png)
+#### Extended properties (when interior + star attached)
 
-*Six random planets from seed 2024. P-F is a super-Earth (R = 22,463 km, g = 36.6 m/s²) — nearly 3.5× Earth's radius. P-E is sub-Mars (R = 5,263 km). The cross-sections are drawn to scale: P-F fills its cell while P-E is a tiny dot. Magnetic arcs, atmosphere halos, and moon counts all reflect the actual generated values.*
-
-![Atmosphere profiles for the same six random planets](figures/fig2b_random_atm.png)
-
-*Each composition type produces a distinct profile shape. CO₂-thick worlds (P-C) have very high surface density that collapses sharply within the first 50 km. Hydrogen atmospheres (P-B) have a long scale height — density falls slowly with altitude. CO₂-thin worlds (P-D, P-E) barely register above 30 km.*
+```python
+planet.derived_J2()                 # from MoI + rotation rate
+planet.derived_magnetic_field_T()   # from dynamo scaling [T]
+planet.derived_heat_flux()          # radiogenic [W/m²]
+planet.derived_MoI()                # moment of inertia factor
+planet.equilibrium_temperature()    # from stellar flux [K]
+planet.in_habitable_zone()          # bool
+planet.stellar_flux()               # W/m²
+planet.xuv_flux()                   # W/m²
+planet.is_tidally_locked()          # bool
+```
 
 ---
 
-## 3. Physics Engine (`core/physics.py`)
+### 5.2 Interior Model (`core/interior.py`)
 
-### SpacecraftState
+Replaces hand-set magnetic field strength and J2 with values physically derived from a layered interior structure. The causal chain is:
 
-All simulation state lives in a single `SpacecraftState` dataclass.
-
-```python
-from core import SpacecraftState
-
-# Manual construction (position and velocity in ECI frame)
-state = SpacecraftState(
-    x=planet.radius + 500_000,  # 500 km above surface [m]
-    y=0, z=0,
-    vx=0, vy=3800, vz=0,        # prograde velocity [m/s]
-    mass=2000,                   # wet mass [kg]
-    dry_mass=400,                # dry mass [kg]
-    heat_load=0.0,               # accumulated aeroheating [J/m²]
-    time=0.0,                    # mission elapsed time [s]
-)
-
-# Factory — place directly in a circular orbit
-state = SpacecraftState.circular_orbit(
-    planet=planet,
-    altitude=300_000,     # m
-    inclination=28.5,     # degrees
-    wet_mass=1500,
-    dry_mass=400,
-)
-
-# Convenience properties
-state.radius      # |r|  [m]  — distance from planet centre
-state.speed       # |v|  [m/s]
-state.fuel_mass   # mass − dry_mass  [kg]  (clamped to 0)
-state.position    # np.array([x, y, z])
-state.velocity    # np.array([vx, vy, vz])
+```
+layer densities + radii  →  moment of inertia (MoI)
+                         →  J2 (from MoI + rotation rate)
+                         →  dynamo number  →  surface B-field
+                         →  radiogenic heat flux  →  convection state
 ```
 
-### Orbital Elements
+#### Built-in constructors
 
 ```python
-from core import state_to_orbital_elements
+from core import InteriorConfig, interior_from_bulk_density
 
-elements = state_to_orbital_elements(state, planet.mu)
-# Returns dict:
-#   a        — semi-major axis [m]
-#   e        — eccentricity
-#   i        — inclination [rad]
-#   RAAN     — right ascension of ascending node [rad]
-#   argp     — argument of periapsis [rad]
-#   nu       — true anomaly [rad]
-#   energy   — specific orbital energy [J/kg]  (< 0 = bound)
-#   h        — specific angular momentum magnitude [m²/s]
+# Earth: PREM-calibrated 4-layer model
+interior = InteriorConfig.earth_like()
+# inner core (r/R=0.191, 13000 kg/m³) + outer core (0.546, 11000)
+# + mantle (0.998, 4500) + crust (1.000, 2900)
+
+# Mars: InSight-calibrated (core r/R=0.54, Fe-S composition)
+interior = InteriorConfig.mars_like()
+
+# Ocean world: silicate core + high-P ice + liquid ocean + ice shell
+interior = InteriorConfig.ocean_world()
+
+# Auto-infer from bulk density
+interior = interior_from_bulk_density(mean_density=5515)
+# → picks earth_like for 4500–6000 kg/m³, mars_like for 3500–4500, etc.
 ```
 
-### OrbitalIntegrator
+#### Attach to a planet
 
 ```python
-from core import OrbitalIntegrator, ThrusterConfig, AeroConfig
-import numpy as np
+earth = PRESETS["earth"]()
+earth.interior = InteriorConfig.earth_like()
 
-integrator = OrbitalIntegrator(
-    planet=planet,
-    thruster=ThrusterConfig(
-        max_thrust=3000,     # N — maximum thrust force
-        Isp=320,             # s — specific impulse
-        enabled=True,
-    ),
-    aero=AeroConfig(
-        enabled=True,
-        Cd=2.2,              # drag coefficient
-        reference_area=10.0, # m² — frontal area
-        heat_flux_coeff=1.7e-4,  # Sutton-Graves constant
-    ),
-    method="RK4",            # "RK4" (fixed step) or "RK45" (adaptive)
-)
+R, M = earth.radius, earth.mass
+print(f"MoI factor:    {earth.interior.moment_of_inertia_factor(R, M):.4f}")   # 0.3483
+print(f"J2 derived:    {earth.interior.compute_J2(R, M, earth.rotation_period):.4e}")  # 1.15e-3
+print(f"B surface:     {earth.interior.surface_magnetic_field_T(R, M)*1e6:.1f} μT")    # 55 μT
+print(f"Heat flux:     {earth.interior.radiogenic_heat_flux(R, M)*1000:.1f} mW/m²")    # 22 mW/m²
+print(f"Convection:    {earth.interior.convection_state(R, M).name}")                   # VIGOROUS/SLUGGISH
+print(f"Dynamo active: {earth.interior.dynamo_active(R, M)}")                           # True
 ```
 
-**Propagating a full trajectory:**
+#### Radiogenic decay
 
 ```python
-# Thrust schedule: list of (t_start, t_end, thrust_vector_N)
-# Thrust vector is in the inertial ECI frame
-thrust_schedule = [
-    (0,   180, np.array([0, -2800, 0])),    # 3-minute retrograde burn
-    (300, 330, np.array([0, -500,  0])),    # 30-second circularisation kick
-]
-
-history = integrator.propagate(
-    initial_state=state,
-    duration=7200,              # total simulation time [s]
-    dt=5,                       # RK4 timestep [s]  (1–2 s for aerobraking)
-    thrust_schedule=thrust_schedule,
-)
-# history: list[SpacecraftState] — one entry per timestep
-# Access as: history[i].altitude, .speed, .fuel_mass, .heat_load, .time
+# Heat production 1 Gyr ago vs today
+factor = InteriorConfig._radiogenic_decay_factor(1.0)   # → ~1.53× present-day
+# Early Earth (0.5 Gyr) had ~1.7× today's radiogenic heating
 ```
-
-**Physics modelled:**
-
-| Effect | Model |
-|---|---|
-| Point-mass gravity | `a = −μ·r̂ / |r|²` |
-| J2 oblateness | Full ECI perturbation tensor (when `oblateness_enabled`) |
-| Atmospheric drag | `F = ½ρv²·Cd·A` |
-| Aeroheating | Sutton-Graves: `q̇ = k·√ρ·v³` |
-| Thrust | Vector in inertial frame, magnitude limited to `max_thrust` |
-| Mass burn | Tsiolkovsky: `ṁ = −T / (Isp·g₀)` |
-| Crash detection | Terminates when `|r| < planet.radius` |
-| Escape detection | Terminates when specific orbital energy > 0 |
-
-**Recommended timestep:**
-- Parking orbits, coast arcs: `dt = 10–30 s`
-- Powered burns: `dt = 5 s`
-- Low-altitude aerobraking passes: `dt = 1–2 s`
 
 ---
 
-## 4. RL Environment (`core/env.py`)
+### 5.3 Stars (`core/star.py`)
 
-`OrbitalInsertionEnv` is a fully Gymnasium-compatible environment. It wraps a `Planet`, an `OrbitalIntegrator`, and a dense reward function into the standard `reset()` / `step()` interface.
+Provides the electromagnetic and gravitational context for planets.
 
-### Initialisation
+#### Six preset stars
+
+| Key | Name | Type | L/L⊙ | T_eff (K) | HZ inner (AU) | HZ outer (AU) |
+|-----|------|------|-------|-----------|----------------|----------------|
+| `sun` | Sun | G2V | 1.000 | 5778 | 0.975 | 1.706 |
+| `tau_ceti` | Tau Ceti | G8.5V | 0.488 | 5344 | 0.652 | 1.144 |
+| `kepler452` | Kepler-452 | G2V | 1.200 | 5757 | 1.068 | 1.874 |
+| `eps_eridani` | ε Eridani | K2V | 0.340 | 5084 | 0.552 | 0.970 |
+| `proxima` | Proxima Cen | M5.5Ve | 0.00157 | 3042 | 0.043 | 0.083 |
+| `trappist1` | TRAPPIST-1 | M8V | 0.000553 | 2566 | 0.025 | 0.051 |
 
 ```python
-from core import OrbitalInsertionEnv
+from core import star_sun, star_proxima_centauri, STAR_PRESETS, AU
 
-env = OrbitalInsertionEnv(
-    # ── Planet source (choose one) ──────────────────────────────
-    randomize_planet=True,          # new random planet each episode (default)
-    planet_preset="mars",           # always use a specific preset
-    planet=my_planet,               # always use a specific Planet object
-    generator_seed=42,              # for reproducible random planets
+sun = star_sun()
+print(sun.summary())
 
-    # ── Feature toggles ─────────────────────────────────────────
-    # These are passed to PlanetGenerator; ignored when planet= is set
-    atmosphere_enabled=True,
-    terrain_enabled=True,
-    magnetic_field_enabled=False,
-    oblateness_enabled=False,
-    moons_enabled=False,
+# Habitable zone
+print(f"HZ: {sun.hz_inner_au:.3f} – {sun.hz_outer_au:.3f} AU")
+print(f"Earth in HZ: {sun.in_habitable_zone(1.0 * AU)}")   # True
+print(f"Venus in HZ: {sun.in_habitable_zone(0.72 * AU)}")  # False
 
-    # ── Mission parameters ──────────────────────────────────────
-    target_altitude=300_000,        # m — desired circular orbit altitude
-    target_eccentricity=0.01,       # maximum acceptable eccentricity at success
-    initial_altitude=100_000,       # m above target altitude (approach altitude)
-    initial_speed_ratio=1.3,        # v₀ / v_circ — hyperbolic approach speed
+# XUV flux (drives atmospheric escape)
+print(f"XUV luminosity: {sun.xuv_luminosity:.2e} W")
 
-    # ── Spacecraft ──────────────────────────────────────────────
-    wet_mass=1000.0,                # kg — total initial mass
-    dry_mass=300.0,                 # kg — structure + payload (no propellant)
-    max_thrust=500.0,               # N — maximum engine force
-    Isp=320.0,                      # s — specific impulse
+# Temperatures
+print(f"T_eq Earth: {sun.equilibrium_temperature(1.0*AU, 0.3):.1f} K")  # 254.6 K
 
-    # ── Simulation ──────────────────────────────────────────────
-    dt=10.0,                        # s — RK4 integration timestep
-    max_steps=2000,                 # episode step limit
-    heat_limit=1e7,                 # J/m² — heat load abort threshold
+# Tidal locking
+prox = star_proxima_centauri()
+print(f"Proxima b locked: {prox.is_tidally_locked(0.0485*AU, 5.972e24, 6.371e6)}")  # True
 
-    # ── Reward shaping (all tunable) ───────────────────────────
-    reward_success=100.0,
-    reward_crash=-50.0,
-    reward_fuel_weight=0.01,
-    reward_step_penalty=-0.01,
+# Orbital mechanics around the star
+print(f"Mars year: {sun.orbital_period(1.524*AU) / 86400:.1f} days")  # 686.9 days
+
+# All presets via dict
+for name, factory in STAR_PRESETS.items():
+    s = factory()
+    print(f"{s.name:20s}  {s.spectral_type.name}  HZ={s.hz_inner_au:.3f}-{s.hz_outer_au:.3f} AU")
+```
+
+---
+
+### 5.4 Atmosphere Science (`core/atmosphere_science.py`)
+
+Multi-layer physical atmosphere model with composition-derived properties, Jeans escape, and greenhouse temperature calculation.
+
+#### Multi-layer atmosphere
+
+```python
+from core import PRESETS
+from core.atmosphere_science import MultiLayerAtmosphere
+
+earth = PRESETS["earth"]()
+atm   = MultiLayerAtmosphere.from_atmosphere_config(earth.atmosphere, earth)
+# → troposphere (0–44km), stratosphere (44–94km), upper atmosphere (94–281km)
+
+# Query at any altitude
+for h_km in [0, 12, 25, 50, 100]:
+    print(f"h={h_km:3d}km  T={atm.temperature_at(h_km*1e3):.0f}K  "
+          f"P={atm.pressure_at(h_km*1e3):.1f}Pa  "
+          f"ρ={atm.density_at(h_km*1e3):.3e}kg/m³")
+
+# Properties
+print(f"Scale height at surface: {atm.scale_height_at(0)/1e3:.1f} km")
+print(f"Speed of sound at 10km: {atm.speed_of_sound(10_000):.0f} m/s")
+print(f"Composition at 50km: {atm.composition_at(50_000)}")
+```
+
+#### Standard compositions
+
+Seven compositions with calibrated mole fractions:
+
+```python
+from core.atmosphere_science import STANDARD_COMPOSITIONS
+
+# Each is a dict of {species: mole_fraction}
+print(STANDARD_COMPOSITIONS["EARTH_LIKE"])
+# {'N2': 0.7808, 'O2': 0.2095, 'Ar': 0.0093, 'CO2': 0.0004, 'H2O': 0.0100}
+
+print(STANDARD_COMPOSITIONS["CO2_THICK"])   # Venus: 96.5% CO2
+print(STANDARD_COMPOSITIONS["METHANE"])     # Titan: 98.4% N2, 1.5% CH4
+```
+
+#### Jeans escape
+
+```python
+from core.atmosphere_science import JeansEscape
+
+# Per-species escape assessment for a planet
+jeans = JeansEscape.all_species_assessment(earth)
+for species, data in jeans.items():
+    print(f"{species:6s}  λ={data['lambda']:8.1f}  "
+          f"t_escape={data['timescale_gyr']:.1f} Gyr  "
+          f"retained={'✓' if data['retained_4gyr'] else '✗'}")
+# N2      λ=  292.8  t_escape=>100 Gyr  retained=✓
+# H2O     λ=  188.3  t_escape=>100 Gyr  retained=✓
+
+# Single-species check
+lam = JeansEscape.lambda_parameter("H2", earth.escape_velocity, 1000)
+# λ < 6 → immediate hydrodynamic escape; λ > 40 → geologically stable
+```
+
+#### Greenhouse model
+
+```python
+from core.atmosphere_science import GreenhouseModel, STANDARD_COMPOSITIONS
+
+comp = STANDARD_COMPOSITIONS["EARTH_LIKE"]
+total = sum(comp.values()); comp = {k:v/total for k,v in comp.items()}
+
+# Greenhouse warming
+dT = GreenhouseModel.total_greenhouse_warming_K(comp, 101_325, 255)
+# → ~19 K
+
+# Iterative surface temperature solve
+T_surf = GreenhouseModel.surface_temperature(255, comp, 101_325)
+# → 292 K (Earth actual: 288 K)
+
+# CO2-only forcing across pressure range
+P_co2 = 0.965 * 9.2e6   # Venus: 96.5% at 92 bar
+dT_venus = GreenhouseModel.co2_forcing_K(P_co2)
+# → ~200 K CO2-only forcing (water vapour amplifier adds the rest)
+
+# Full analysis
+from core.atmosphere_science import analyse_atmosphere
+from core import star_sun, AU
+aa = analyse_atmosphere(earth, star=star_sun(), orbital_distance_m=1.0*AU)
+print(f"T_eq:       {aa['equilibrium_temp_K']:.1f} K")
+print(f"dT_GH:      {aa['greenhouse_dT_K']:.1f} K")
+print(f"T_surface:  {aa['surface_temp_K']:.1f} K")
+print(f"Scale H:    {aa['scale_height_km']:.1f} km")
+print(f"Atm mass:   {aa['atmospheric_mass_kg']:.3e} kg")
+```
+
+---
+
+### 5.5 Habitability Assessment (`core/habitability.py`)
+
+Scores a planet across ten factors and produces a structured written report.
+
+#### Run an assessment
+
+```python
+from core import PRESETS, InteriorConfig, star_sun, AU
+from core.habitability import assess_habitability
+
+earth = PRESETS["earth"]()
+earth.interior = InteriorConfig.earth_like()
+
+ha = assess_habitability(
+    planet=earth,
+    star=star_sun(),
+    orbital_distance_m=1.0 * AU,
+    bond_albedo=0.3
 )
+
+# Print the full doctor-style report
+print(ha.report())
+
+# Key outputs
+print(ha.overall_score)            # 0.842
+print(ha.grade)                    # "A"
+print(ha.is_potentially_habitable) # True
+print(ha.is_earth_like)            # True
+print(ha.surface_temp_K)           # 292.3 K
+print(ha.greenhouse_dT_K)          # 19.1 K
+print(ha.size_class)               # "Earth-sized"
+print(ha.composition_class)        # "Rocky Earth-like"
+
+# Per-factor breakdown
+for name, (score, note) in ha.factors.items():
+    print(f"  {score:.2f}  {name:25s}  {note[:60]}")
 ```
 
-### Observation Space — 10 continuous dimensions (`float32`)
+#### Factor scores — what each one tests
 
-The observation encodes both the spacecraft's current state (indices 0–5) and the planet's physical identity (indices 6–9). Indices 6–9 are the **task context** — they allow a single trained policy to reason about what kind of world it is orbiting and adapt accordingly.
-
-| Index | Name | Approximate range | Description |
-|---|---|---|---|
-| 0 | `altitude_norm` | 0 – 2 | Current altitude / target altitude |
-| 1 | `speed_norm` | 0 – 2 | Current speed / target circular orbit speed |
-| 2 | `flight_path_angle` | −1 – 1 | Flight path angle / π  (−1 = straight down) |
-| 3 | `eccentricity` | 0 – 2 | Current orbital eccentricity (0 = circular) |
-| 4 | `fuel_fraction` | 0 – 1 | Remaining propellant / initial propellant |
-| 5 | `heat_norm` | 0 – 1 | Accumulated heat load / heat limit |
-| 6 | `planet_radius_norm` | 0 – 4 | Planet radius / R⊕ |
-| 7 | `surface_grav_norm` | 0 – ~5 | Surface gravity / 9.81 m/s² |
-| 8 | `atm_density_norm` | 0 – ~100 | Atmospheric density at current altitude / 1.225 kg/m³ |
-| 9 | `target_alt_norm` | 0 – ~1 | Target altitude / planet radius |
-
-### Action Space — 3 continuous dimensions, all in `[−1, 1]`
-
-| Index | Name | Mapped to | Description |
-|---|---|---|---|
-| 0 | `thrust_magnitude` | `[0, max_thrust]` N | Engine throttle (−1 = off, +1 = full) |
-| 1 | `pitch` | `[−π/2, π/2]` rad | Thrust vector pitch angle |
-| 2 | `yaw` | `[−π, π]` rad | Thrust vector yaw angle |
-
-### Reward Function
-
-```
-r_step = −0.5 · |altitude_norm − 1|      ← penalise distance from target altitude
-       + −0.5 · |speed_norm − 1|         ← penalise speed error vs circular speed
-       + −0.3 · eccentricity             ← penalise non-circular orbit shape
-       + −reward_fuel_weight · Δfuel     ← penalise propellant expenditure
-       + reward_step_penalty             ← constant step penalty (−0.01)
-
-r_terminal:
-       + 100.0  on success
-       + −50.0  on crash
-```
-
-**Success condition:** `|altitude − target| < 5% × target` AND `eccentricity < 0.05`
-
-### Terminal and Truncation Conditions
-
-| Condition | Signal | `info` key |
+| Factor | Score = 1.0 when… | Score = 0.0 when… |
 |---|---|---|
-| Orbit achieved (success) | `terminated = True` | `info["success"] = True` |
-| Crashed into surface | `terminated = True` | `info["crash"] = True` |
-| Escaped sphere of influence | `terminated = True` | — |
-| Heat limit exceeded | `terminated = True` | — |
-| `max_steps` reached | `truncated = True` | — |
-| Out of fuel | `truncated = True` | — |
+| Stellar type | G or K star | O, B, or L/T star |
+| Stellar age | ~4.5 Gyr old | < 1 Gyr (too young) |
+| Habitable zone | Centre of conservative HZ | Outside optimistic HZ |
+| Surface temperature | 270–315 K | < 200 K or > 400 K |
+| Liquid water | 273–647 K, P > 611 Pa | Below freezing or supercritical |
+| Atm. retention | Jeans λ > 40 for bulk species | λ < 5 (hydrodynamic blowoff) |
+| Magnetic shield | 20–60 μT | < 0.1 μT |
+| Tidal locking | Not locked | Locked (extreme day/night contrast) |
+| Interior activity | Vigorous mantle convection | Interior shutdown |
+| Planet size | 0.7–1.6 R⊕ | < 0.3 R⊕ or > 4 R⊕ |
 
-### Step Info Dict
+#### Benchmark scores for solar system bodies
 
-Every `step()` call returns an `info` dict with:
+| Body | Score | Grade | Key failure |
+|---|---|---|---|
+| Earth | 0.842 | A | Slightly off HZ centre |
+| Mars | 0.361 | D | Cold, weak magnetic field |
+| Moon | 0.288 | D | No atmosphere, no field |
+| Venus | 0.226 | F | Runaway greenhouse |
+| Titan | 0.206 | F | Far from Sun, 9.5 AU |
+
+---
+
+### 5.6 Orbital Analysis (`core/orbital_analysis.py`)
+
+Complete suite for science mission orbit design. All calculations work for any planet with a known J2.
+
+#### J2 secular rates
 
 ```python
-info["altitude_m"]         # current altitude [m]
-info["speed_mps"]          # current speed [m/s]
-info["eccentricity"]       # current eccentricity
-info["fuel_remaining_kg"]  # propellant remaining [kg]
-info["heat_load"]          # accumulated heat [J/m²]
-info["success"]            # bool
-info["crash"]              # bool
-info["planet_name"]        # planet name string
+from core.orbital_analysis import J2Analysis
+import math
+
+earth = PRESETS["earth"]()
+earth.interior = InteriorConfig.earth_like()
+
+# Secular precession rates at 500 km / 98°
+rates = J2Analysis.secular_rates_summary(earth, altitude_km=500, inclination_deg=98.0)
+print(f"RAAN precession: {rates['dOmega_dt_deg_day']:+.4f} °/day")
+print(f"Apsidal precession: {rates['domega_dt_deg_day']:+.4f} °/day")
+print(f"Critical inclination: {rates['critical_inclination_deg']:.2f}°")  # 63.43°
+
+# At a specific inclination
+rate = J2Analysis.nodal_precession_rate_deg_day(earth, earth.radius+500e3, math.radians(98))
+# → +1.133 °/day (retrograde orbit, eastward precession)
 ```
 
-### Training Loop
+#### Sun-synchronous orbits
 
 ```python
-from core import OrbitalInsertionEnv
-import numpy as np
+from core.orbital_analysis import SunSynchronousOrbit
+from core.star import star_sun, AU
 
-env = OrbitalInsertionEnv(
-    randomize_planet=True,
-    atmosphere_enabled=True,
-    oblateness_enabled=False,
-    target_altitude=300_000,
+sun = star_sun()
+T_year = sun.orbital_period(1.0 * AU)   # Earth's orbital period [s]
+
+# Required inclination for sun-sync at a given altitude
+inc = SunSynchronousOrbit.sun_sync_inclination(earth, altitude_m=500_000, 
+                                                stellar_orbital_period_s=T_year)
+print(f"Sun-sync at 500 km: {inc:.2f}°")   # 96.96° (textbook: 97.4°)
+
+# How much does local solar time drift if we're slightly off?
+drift = SunSynchronousOrbit.local_solar_time_drift(earth, 500_000, 97.0, T_year)
+print(f"LST drift at 97.0°: {drift:.2f} min/day")
+```
+
+#### Frozen orbits
+
+```python
+from core.orbital_analysis import FrozenOrbit
+
+# The eccentricity that stops periapsis from drifting
+params = FrozenOrbit.frozen_orbit_params(earth, altitude_km=500, inclination_deg=98.0)
+print(f"Frozen eccentricity: {params['frozen_ecc']:.5f}")     # 0.00101
+print(f"Alt variation: ±{params['alt_variation_km']/2:.1f} km")  # ±6.9 km
+print(f"ω at frozen condition: {params['frozen_omega_deg']}°")   # always 90°
+```
+
+#### Atmospheric drag lifetime
+
+```python
+from core.orbital_analysis import DragLifetime
+
+# How long does the orbit last?
+tau = DragLifetime.lifetime_years(
+    planet=earth,
+    altitude_m=400_000,
+    spacecraft_mass_kg=1000,
+    ballistic_coeff_kg_m2=100    # m/(Cd×A); CubeSat~20, large sc~200
 )
+print(f"400 km lifetime: {tau:.1f} yr")   # ~2.0 yr
 
-obs, info = env.reset(seed=0)
-print(f"Starting around: {info['planet_name']}")
-
-total_reward = 0
-for step in range(env.max_steps):
-    action = env.action_space.sample()   # ← replace with your policy
-    obs, reward, terminated, truncated, info = env.step(action)
-    total_reward += reward
-
-    if terminated or truncated:
-        print(f"Episode ended after {step+1} steps")
-        print(f"  Success:   {info['success']}")
-        print(f"  Altitude:  {info['altitude_m']/1e3:.1f} km")
-        print(f"  Ecc:       {info['eccentricity']:.4f}")
-        print(f"  Fuel left: {info['fuel_remaining_kg']:.1f} kg")
-        print(f"  Total reward: {total_reward:.1f}")
-        break
+# Minimum safe altitude for a given mission duration
+alt_min = DragLifetime.minimum_safe_altitude_km(earth, 1000, 100, min_lifetime_years=5)
+print(f"Min altitude for 5-yr mission: {alt_min:.0f} km")
 ```
 
-### Accessing the Recorded Trajectory
+#### Station-keeping budget
 
 ```python
-obs, info = env.reset()
+from core.orbital_analysis import StationKeeping
 
-for _ in range(500):
-    obs, reward, terminated, truncated, info = env.step(env.action_space.sample())
-    if terminated or truncated:
-        break
+sk = StationKeeping.total_annual_budget(
+    planet=earth,
+    altitude_km=500,
+    inclination_deg=98.0,
+    ballistic_coeff_kg_m2=100,
+    stellar_orbital_period_s=T_year   # enables sun-sync rate target
+)
+print(f"Drag ΔV:        {sk['drag_dv_m_s_yr']:.2f} m/s/yr")
+print(f"RAAN ΔV:        {sk['raan_dv_m_s_yr']:.2f} m/s/yr")
+print(f"Total ΔV:       {sk['total_dv_m_s_yr']:.2f} m/s/yr")
+print(f"10-yr budget:   {sk['mission_10yr_dv']:.1f} m/s")
+```
 
-trajectory = env.get_trajectory()   # list[SpacecraftState]
+#### Repeat ground-track orbits
 
-# Pass to visualiser
-from visualization import plot_mission_telemetry
-fig = plot_mission_telemetry(trajectory, env.planet, target_altitude=300_000)
-fig.savefig("telemetry.png", dpi=150)
+```python
+from core.orbital_analysis import RepeatGroundTrack
+
+# Find all repeat-track solutions between 400 and 800 km
+solutions = RepeatGroundTrack.find_repeat_orbits(earth, altitude_range_km=(400, 800),
+                                                  max_days=20)
+for s in solutions[:5]:
+    print(f"  {s['k_orbits']:3d} orbits / {s['n_days']:2d} days → "
+          f"alt={s['alt_km']:.0f} km  period={s['period_min']:.1f} min  "
+          f"track spacing={RepeatGroundTrack.equatorial_track_spacing_km(earth, s['k_orbits'], s['n_days']):.0f} km")
+
+# All-in-one design report
+design = OrbitDesign("Mars", altitude_km=400, inclination_deg=93.0,
+                     ballistic_coeff_kg_m2=100,
+                     stellar_orbital_period_s=sun.orbital_period(1.524*AU))
+design.compute(mars)
+print(design.report())
 ```
 
 ---
 
-## 5. Visualisation (`visualization/visualizer.py`)
+### 5.7 Ground Track & Coverage (`core/ground_track.py`)
 
-All plot functions target publication quality: **Wong (2011) colorblind-safe palette**, serif fonts, 7–9 pt labels, no top/right spines. Output is simultaneously saved as 300 dpi PNG and vector PDF with embedded Type-42 fonts.
+Propagates the spacecraft ground track accounting for planet rotation and J2 nodal precession, then computes surface coverage.
 
-### Import
+#### Propagate a ground track
+
+```python
+from core.ground_track import propagate_ground_track, find_passes
+
+track = propagate_ground_track(
+    planet=earth,
+    altitude_m=500_000,
+    inclination_deg=98.0,
+    duration_s=3 * 86400,       # 3 days
+    dt_s=120,                    # 2-minute output cadence
+    raan_deg=0.0,                # initial RAAN
+    include_j2=True              # account for nodal precession
+)
+
+# Each point has .lat_deg, .lon_deg, .time_s, .altitude_m
+for pt in track[::100]:
+    print(f"t={pt.time_s/3600:.1f}h  lat={pt.lat_deg:.1f}°  lon={pt.lon_deg:.1f}°")
+
+# Find passes over a ground station
+passes = find_passes(track, target_lat_deg=51.5, target_lon_deg=0.0, radius_km=1000)
+print(f"London passes in 3 days: {len(passes)}")
+for p in passes:
+    print(f"  t={p['time_s']/3600:.1f}h  distance={p['distance_km']:.0f} km")
+```
+
+#### Coverage maps
+
+```python
+from core.ground_track import compute_coverage_map, coverage_analysis
+
+# Quick coverage analysis
+cov = coverage_analysis(
+    planet=earth,
+    altitude_km=500,
+    inclination_deg=98.0,
+    swath_width_km=120,
+    duration_days=3,
+    dt_s=120,
+    lat_res_deg=2.0, lon_res_deg=2.0
+)
+
+print(cov.summary())
+# → Coverage map (3.0 days, swath=120 km)
+# →   Coverage:  98.7% of surface area observed
+# →   Max count: 5
+
+# Access the raw grid (shape: n_lat × n_lon)
+import numpy as np
+print(f"Grid shape: {cov.grid.shape}")
+print(f"Mean observation count: {cov.grid.mean():.2f}")
+
+# Time to 95% coverage
+from core.ground_track import time_to_full_coverage_days
+days = time_to_full_coverage_days(earth, 500, 98.0, swath_width_km=120,
+                                   target_coverage=0.95, max_days=14)
+print(f"Days to 95% coverage: {days}")
+```
+
+---
+
+### 5.8 Surface Energy (`core/surface_energy.py`)
+
+Computes spatially resolved insolation and surface temperature across the globe, accounting for obliquity, seasons, and thermal inertia.
+
+#### Insolation map
+
+```python
+from core.surface_energy import compute_insolation_map
+from core.star import star_sun, AU
+
+S_earth = star_sun().flux_at_distance(1.0 * AU)   # 1361 W/m²
+
+ins = compute_insolation_map(
+    planet=earth,
+    stellar_flux_W_m2=S_earth,
+    obliquity_deg=23.5,
+    orbital_phase=0.0,       # 0=N. solstice, 0.25=equinox, 0.5=S. solstice
+    time_average=True,       # daily mean (True) vs instantaneous noon (False)
+    lat_res_deg=5.0,
+    lon_res_deg=5.0
+)
+
+print(ins.summary())
+# Global mean: 340.2 W/m²  (textbook: 342 W/m²)
+# Max: 492 W/m² (summer pole during polar day)
+# Min: 0 W/m²  (polar night)
+```
+
+#### Temperature map
+
+```python
+from core.surface_energy import compute_temperature_map, surface_energy_balance
+
+# Full energy balance with greenhouse
+seb = surface_energy_balance(
+    planet=earth,
+    star=star_sun(),
+    orbital_distance_m=1.0 * AU,
+    obliquity_deg=23.5,
+    bond_albedo=0.3,
+    thermal_inertia=800,        # J m⁻² K⁻¹ s⁻¹/²  (800 ≈ rocky with soil)
+    greenhouse_dT_K=None        # computed automatically from atmosphere
+)
+
+T = seb["temperature_map"]
+print(T.summary())
+# Global mean:    275.4 K
+# Equatorial:     289.6 K
+# Polar:          235.6 K
+# Day-night range: 65.6 K
+# Habitable area:  64.3%
+
+# Access the 2D array directly
+import matplotlib.pyplot as plt
+plt.pcolormesh(T.lon_deg, T.lat_deg, T.data_K, cmap="RdYlBu_r")
+plt.colorbar(label="Temperature (K)")
+plt.show()
+
+# Polar ice test
+from core.surface_energy import has_permanent_polar_ice
+has_ice = has_permanent_polar_ice(earth, star_sun(), 1.0*AU, obliquity_deg=5.0)
+# Low obliquity → permanent polar shadow → likely ice
+```
+
+---
+
+### 5.9 Tidal Dynamics (`core/tidal.py`)
+
+Tidal heating, locking timescales, Roche limits, and orbital migration for planet-moon systems.
+
+#### Tidal heating
+
+```python
+from core.tidal import TidalHeating
+
+# Io-Jupiter: calibrated to observed ~10¹⁴ W
+io_heat = TidalHeating.heating_rate_W(
+    body_radius_m=1.821e6,         # Io radius
+    body_mass_kg=8.93e22,          # Io mass
+    perturber_mass_kg=1.898e27,    # Jupiter mass
+    orbital_semi_major_axis_m=421_800e3,
+    eccentricity=0.0041,
+    tidal_Q=100,
+    love_number_k2=0.3
+)
+print(f"Io tidal heating: {io_heat:.2e} W")   # ~2e13 W (model vs 1e14 observed)
+
+# Surface heat flux
+flux = TidalHeating.surface_heat_flux_W_m2(1.821e6, io_heat)
+# Europa threshold for subsurface liquid ocean: ~0.05 W/m²
+
+# What eccentricity is needed for an ocean on a given moon?
+e_ocean = TidalHeating.equilibrium_eccentricity_for_target_flux(
+    body_radius_m=1.5e6, body_mass_kg=1e22,
+    perturber_mass_kg=earth.mass, orbital_semi_major_axis_m=5*earth.radius,
+    target_flux_W_m2=0.05
+)
+print(f"Eccentricity needed for subsurface ocean: {e_ocean:.4f}")
+```
+
+#### Tidal locking
+
+```python
+from core.tidal import TidalLocking
+
+# How long to tidally lock Earth's Moon?
+t_lock = TidalLocking.locking_timescale_gyr(
+    body_radius_m=1.737e6, body_mass_kg=7.342e22,
+    perturber_mass_kg=earth.mass, orbital_semi_major_axis_m=384_400e3
+)
+print(f"Moon lock timescale: {t_lock:.3f} Gyr")   # ~0.002 Gyr ✓ (already locked)
+
+# Synchronous orbit radius (inside → spirals in, outside → spirals out)
+r_sync = TidalLocking.synchronous_orbit_radius(earth.mass, earth.rotation_period)
+print(f"Earth sync orbit: {r_sync/1e3:.0f} km")   # ~42,164 km
+```
+
+#### Roche limit
+
+```python
+from core.tidal import RocheLimit
+
+# Fluid Roche limit (rubble pile satellite)
+r_fluid = RocheLimit.fluid_satellite(earth.radius, earth.mean_density, 3000)
+print(f"Fluid Roche limit: {r_fluid/1e3:.0f} km")   # ~18,000 km
+
+# Rigid Roche limit (monolithic rock)
+r_rigid = RocheLimit.rigid_satellite(earth.radius, earth.mean_density, 3000)
+print(f"Rigid Roche limit: {r_rigid/1e3:.0f} km")   # ~9,800 km
+```
+
+#### Complete tidal analysis
+
+```python
+from core.tidal import analyse_tidal
+
+ta = analyse_tidal(
+    planet=earth,
+    moon_mass_kg=7.342e22,
+    moon_radius_m=1.737e6,
+    moon_orbital_distance_m=384_400e3,
+    moon_eccentricity=0.0549,
+    moon_name="Moon",
+    system_age_gyr=4.5
+)
+print(ta.report())
+# → Tidal heating: 1.1e+18 W, Lock timescale: 0.002 Gyr, Roche: 18364 km
+# → Migration: +0.038 km/yr (outward — matches observed 38 mm/yr)
+```
+
+---
+
+### 5.10 Mission Design (`core/mission.py`)
+
+End-to-end mission engineering: from arrival velocity to final orbit.
+
+#### Orbital insertion ΔV
+
+```python
+from core.mission import orbital_insertion_dv
+
+result = orbital_insertion_dv(
+    planet=mars,
+    approach_vinf_km_s=2.5,       # arrival hyperbolic excess speed
+    target_altitude_km=300,        # desired circular science orbit
+    periapsis_altitude_km=110      # periapsis of capture ellipse
+)
+print(f"Capture burn:       {result['dv_capture_m_s']:.0f} m/s")
+print(f"Circularise burn:   {result['dv_circularise_m_s']:.0f} m/s")
+print(f"Total insertion:    {result['dv_total_m_s']:.0f} m/s")
+# → 2021 m/s total (MRO used ~1000 m/s with aerobraking)
+```
+
+#### Aerobraking campaign
+
+```python
+from core.mission import plan_aerobraking
+
+campaign = plan_aerobraking(
+    planet=mars,
+    initial_apoapsis_km=35_000,   # after capture burn
+    target_apoapsis_km=400,       # science orbit apoapsis
+    periapsis_altitude_km=115,    # drag pass altitude
+    spacecraft_mass_kg=1000,
+    ballistic_coeff=100,
+    heat_limit_W_m2=2000,         # max aerodynamic heating rate
+    g_limit=5.0                   # max deceleration [g]
+)
+print(campaign.report())
+# → 14 passes, saves 1808 m/s, ~28 days
+
+# Inspect individual passes
+for p in campaign.passes[::3]:
+    print(f"  Pass {p.pass_number:3d}: apo={p.apoapsis_before_km:7.0f} km → "
+          f"{p.apoapsis_after_km:7.0f} km  heat={p.peak_heating_W_m2:.0f} W/m²")
+```
+
+#### Full mission ΔV budget
+
+```python
+from core.mission import build_mission_dv_budget
+
+budget = build_mission_dv_budget(
+    planet=mars,
+    star=star_sun(),
+    orbital_distance_m=1.524 * AU,
+    approach_vinf_km_s=2.5,
+    target_altitude_km=300,
+    use_aerobraking=True,
+    station_keeping_years=5,
+    ballistic_coeff=100
+)
+print(budget.report())
+# ΔV Budget: Mission to Mars
+# Capture burn         1956.1 m/s
+# Aerobraking exit      202.1 m/s
+# ...
+# TOTAL                2930.3 m/s
+
+# Propellant mass for 500 kg payload with Isp=320s
+m_prop = budget.propellant_mass_kg(dry_mass_kg=500, Isp_s=320)
+m_launch = budget.launch_mass_kg(payload_mass_kg=500, Isp_s=320)
+print(f"Propellant: {m_prop:.0f} kg, Launch mass: {m_launch:.0f} kg")
+```
+
+#### Lambert solver (interplanetary transfers)
+
+```python
+from core.mission import lambert_solve
+import numpy as np
+
+# Find the velocity vectors for a transfer from Earth to Mars
+r1 = np.array([1.0 * AU, 0, 0])          # Earth at departure
+r2 = np.array([0, 1.524 * AU, 0])         # Mars 90° ahead
+tof = 259 * 86400                           # 259-day transfer (Hohmann-like)
+mu_sun = 6.674e-11 * 1.989e30
+
+v1, v2 = lambert_solve(r1, r2, tof, mu_sun)
+v_inf_dep = np.linalg.norm(v1 - np.array([0, 29_780, 0]))  # Earth orbital speed
+print(f"Departure v∞: {v_inf_dep/1e3:.2f} km/s")
+```
+
+#### Porkchop plot data
+
+```python
+from core.mission import porkchop_data
+import numpy as np
+
+mu_sun = 6.674e-11 * 1.989e30
+r_earth = 1.0 * AU;  r_mars = 1.524 * AU
+T_earth = 2 * 3.14159 * (r_earth**3 / mu_sun)**0.5
+T_mars  = 2 * 3.14159 * (r_mars**3  / mu_sun)**0.5
+
+dep = np.linspace(0, 780, 60)   # departure days
+arr = np.linspace(150, 930, 60) # arrival days
+
+pc = porkchop_data(mu_sun, r_earth, r_mars, dep, arr, T_earth, T_mars)
+# pc["C3"] → 2D array of launch energy [km²/s²]
+# pc["v_inf_arr"] → 2D array of arrival v∞ [km/s]
+# pc["tof_days"]  → 2D array of time of flight [days]
+
+# Minimum C3 launch window
+mask = (pc["C3"] > 0) & ~np.isnan(pc["C3"])
+if mask.any():
+    i, j = np.unravel_index(np.where(mask, pc["C3"], np.inf).argmin(), pc["C3"].shape)
+    print(f"Best departure: day {dep[i]:.0f}  arrival: day {arr[j]:.0f}  "
+          f"C3={pc['C3'][i,j]:.1f} km²/s²")
+```
+
+#### Gravity assist
+
+```python
+from core.mission import GravityAssist
+
+result = GravityAssist.summary(mars, v_inf_km_s=3.0, periapsis_altitude_km=200)
+print(f"Bending angle:    {result['bending_angle_deg']:.1f}°")
+print(f"Max ΔV from flyby: {result['max_delta_v_km_s']:.2f} km/s")
+print(f"Periapsis speed:  {result['periapsis_speed_km_s']:.2f} km/s")
+```
+
+---
+
+### 5.11 RL Environment (`core/env.py`)
+
+A Gymnasium-compatible environment for training agents to perform orbital insertion across diverse procedurally generated planets.
+
+```python
+from core import OrbitalInsertionEnv
+
+env = OrbitalInsertionEnv(
+    randomize_planet=True,              # new planet each episode
+    atmosphere_enabled=True,
+    oblateness_enabled=False,           # start without J2
+    moons_enabled=False,
+    target_altitude=300_000,            # m
+    wet_mass=1000.0, dry_mass=300.0,
+    max_thrust=500.0, Isp=320.0,
+    dt=10.0, max_steps=2000,
+)
+
+obs, info = env.reset(seed=42)
+print(f"Planet: {info['planet_name']}")
+
+done = False
+while not done:
+    action = env.action_space.sample()  # replace with your policy
+    obs, reward, terminated, truncated, info = env.step(action)
+    done = terminated or truncated
+
+print(f"Success: {info['success']}  Final alt: {info['altitude_m']/1e3:.1f} km")
+```
+
+**Observation space** (10 × float32): `[altitude_norm, speed_norm, flight_path_angle, eccentricity, fuel_fraction, heat_norm, planet_radius_norm, surface_grav_norm, atm_density_norm, target_alt_norm]`
+
+**Action space** (3 × float32, all ∈ [−1, 1]): `[thrust_magnitude, pitch, yaw]`
+
+**Reward**: dense shaping on altitude + speed + eccentricity errors, −0.01/step, +100 success, −50 crash.
+
+---
+
+### 5.12 Visualisation (`visualization/visualizer.py`)
+
+Publication-quality figures using the **Wong (2011) colorblind-safe palette**. All output is saved as both 300 dpi PNG and vector PDF with embedded fonts.
 
 ```python
 from visualization import (
-    plot_planet_cross_section,   # schematic diagram of a planet
-    plot_atmosphere_profile,     # density / pressure / temperature panels
-    plot_trajectory_2d,          # orbital trajectory coloured by speed or fuel
-    plot_mission_telemetry,      # 4-panel altitude/speed/fuel/heat dashboard
-    plot_planet_comparison,      # bar chart comparing a list of planets
-    save_figure,                 # save as PNG + PDF in one call
-    apply_journal_style,         # set global matplotlib rcParams
+    plot_planet_cross_section,   # schematic cross-section
+    plot_atmosphere_profile,     # density/pressure/temperature panels
+    plot_trajectory_2d,          # orbital trajectory coloured by speed
+    plot_mission_telemetry,      # 4-panel altitude/speed/fuel/heat
+    plot_planet_comparison,      # bar chart comparison
+    save_figure,
+    apply_journal_style,
+    # Colour palette
+    WONG, W_BLUE, W_RED, W_GREEN, W_ORANGE, W_BLACK, W_PINK, W_SKY, W_YELLOW,
+    # Typography constants
+    FT, FL, FK, FG, FA, LW, LW2,
 )
 ```
 
----
-
-### `plot_planet_cross_section(planet, ax=None, ref_radius=None)`
-
-Schematic cross-section showing: terrain colour, atmosphere halos (scaled to actual scale height), magnetic field arcs, core colour (red = iron-rich, grey = rocky), and moons.
-
-The key parameter is `ref_radius`. When drawing multiple planets side by side, pass `ref_radius = max(p.radius for p in group)` to all of them. Each planet is then drawn at `scale = planet.radius / ref_radius`, so relative sizes are physically accurate. Leave `ref_radius=None` for standalone single-planet figures.
+#### Cross-section with relative scaling
 
 ```python
 import matplotlib.pyplot as plt
 from core import PRESETS
-from visualization import plot_planet_cross_section, save_figure
+from core import InteriorConfig
 
 planets = [PRESETS[k]() for k in PRESETS]
-ref     = max(p.radius for p in planets)
+ref_r   = max(p.radius for p in planets)   # draw to scale
 
 fig, axes = plt.subplots(1, 5, figsize=(10, 2.8),
                           gridspec_kw=dict(wspace=0.05))
-fig.patch.set_facecolor("white")
-
 for ax, planet in zip(axes, planets):
-    plot_planet_cross_section(planet, ax=ax, ref_radius=ref)
-
+    plot_planet_cross_section(planet, ax=ax, ref_radius=ref_r)
 save_figure(fig, "presets", output_dir="figures")
 ```
 
-![Feature toggle: same seed, four configurations](figures/fig5_toggle.png)
-
-*Same planet seed generated four times with features added incrementally. Left: atmosphere only. Second: terrain added (surface colour changes from pale green to brown). Third: magnetic field added (arcs appear). Right: J2 + 4 moons added (dots appear at orbital distance).*
+The `ref_radius` parameter is the key to relative scaling. Leave it `None` for standalone single-planet diagrams where the planet should fill the axes.
 
 ---
 
-### `plot_atmosphere_profile(planet, axes=None, max_altitude_km=150)`
+## 6. Science Demo Script
 
-Draws a three-panel profile: density | pressure | temperature. Each panel is an independent subplot sharing only the y-axis (altitude). The leftmost panel shows the y-label and tick marks; the others suppress them to avoid redundancy.
-
-**Always pass exactly 3 `Axes` objects** when embedding in a larger figure. When `axes=None`, a standalone `(6.0, 2.8)` figure is created automatically.
-
-```python
-import matplotlib.pyplot as plt
-from visualization import plot_atmosphere_profile
-from core import PRESETS
-
-# Standalone figure for one planet
-fig, axes = plt.subplots(1, 3, figsize=(6, 2.8), sharey=True)
-fig.subplots_adjust(wspace=0.10, left=0.12, right=0.97)
-plot_atmosphere_profile(PRESETS["venus"](), axes=axes, max_altitude_km=120)
-plt.show()
-```
-
-When embedding in a multi-planet figure, create each triplet with `sharey` between its own three axes:
-
-```python
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-from visualization import plot_atmosphere_profile
-
-planets = [...]   # list of N planets
-fig = plt.figure(figsize=(5.5, N * 1.8))
-gs  = gridspec.GridSpec(N, 3, figure=fig, wspace=0.12, hspace=0.65)
-
-for row, planet in enumerate(planets):
-    ax0 = fig.add_subplot(gs[row, 0])
-    ax1 = fig.add_subplot(gs[row, 1], sharey=ax0)
-    ax2 = fig.add_subplot(gs[row, 2], sharey=ax0)
-    plot_atmosphere_profile(planet, axes=[ax0, ax1, ax2])
-```
-
-![All six atmosphere compositions](figures/fig3_atm_zoo.png)
-
-*One planet per atmosphere type. The scale of each panel is independent, so the dramatically different pressure regimes are all clearly visible. CO₂-thick (Venus analogue) shows 9.2 MPa surface pressure and 65 kg/m³ surface density — over 50× denser than Earth at sea level. Methane and hydrogen worlds have long scale heights, giving a gently curved profile that extends to high altitude. CO₂-thin (Mars) is barely visible above 40 km. Planets with no atmosphere show a single "No atmosphere" label.*
-
----
-
-### `plot_trajectory_2d(planet, trajectory, ax=None, target_altitude, color_by)`
-
-Top-down equatorial-plane view of a trajectory. The path is coloured by either speed (plasma colormap) or fuel remaining (red–yellow–green). A dashed ring marks the target orbit. Start and end positions are marked.
-
-```python
-from visualization import plot_trajectory_2d
-import matplotlib.pyplot as plt
-
-fig, ax = plt.subplots(figsize=(5, 5))
-plot_trajectory_2d(
-    planet=mars,
-    trajectory=history,         # list[SpacecraftState] from integrator.propagate()
-    ax=ax,
-    target_altitude=300_000,    # m
-    color_by="speed",           # "speed" or "fuel"
-)
-plt.tight_layout()
-plt.show()
-```
-
----
-
-### `plot_mission_telemetry(trajectory, planet, target_altitude, figsize)`
-
-Four-panel dashboard showing the full timeline of a simulated insertion: altitude vs. time, speed vs. time, propellant mass vs. time, and accumulated heat load vs. time. Reference dashed lines mark the target altitude and target circular orbit speed.
-
-```python
-from visualization import plot_mission_telemetry, save_figure
-
-fig = plot_mission_telemetry(
-    trajectory=history,
-    planet=mars,
-    target_altitude=300_000,
-    figsize=(7.0, 4.5),
-)
-save_figure(fig, "insertion_telemetry", output_dir="figures")
-```
-
----
-
-### `plot_planet_comparison(planets, figsize)`
-
-Vertical bar chart comparing up to ~10 planets across four metrics: radius (in R⊕), surface gravity, escape velocity, and surface atmosphere density. Each planet gets a distinct Wong-palette colour.
-
-```python
-from visualization import plot_planet_comparison
-from core import PRESETS
-
-presets = [PRESETS[k]() for k in PRESETS]
-fig = plot_planet_comparison(presets, figsize=(7.0, 3.2))
-plt.show()
-```
-
----
-
-### `save_figure(fig, filename, output_dir, dpi_png, formats)`
-
-Saves both a raster PNG and a vector PDF in one call. PDF output uses `pdf.fonttype=42` (TrueType embedding) for compatibility with IEEE, Elsevier, and Nature submission portals.
-
-```python
-from visualization import save_figure
-
-save_figure(fig, "my_figure", output_dir="figures")
-# → figures/my_figure.png  (300 dpi by default)
-# → figures/my_figure.pdf  (vector, fonts embedded)
-
-# Override DPI for camera-ready submission
-save_figure(fig, "my_figure", output_dir="figures", dpi_png=600)
-```
-
----
-
-### Colour Palette & Style Constants
-
-Planet-RL uses the **Wong (2011)** 8-colour palette throughout. It is distinguishable under deuteranopia and protanopia, and all eight colours remain distinct in black-and-white printing.
-
-```python
-from visualization import (
-    WONG,        # full 8-colour list
-    WONG_CYCLE,  # alias for WONG
-    W_BLUE,      # "#0072B2"  — used for pressure profiles, altitude
-    W_RED,       # "#D55E00"  — used for density profiles, speed
-    W_GREEN,     # "#009E73"  — used for temperature profiles, fuel
-    W_ORANGE,    # "#E69F00"  — used for aeroheating, secondary data
-    W_BLACK,     # "#000000"  — used for reference lines, targets
-)
-```
-
-Typography constants (all in points):
-
-```python
-from visualization import FT, FL, FK, FG, FA, LW, LW2
-
-FT   # 9   — axes title
-FL   # 8   — axis label
-FK   # 7   — tick label
-FG   # 7   — legend text
-FA   # 6.5 — annotation text
-LW   # 1.4 — main line weight
-LW2  # 0.9 — reference/guide line weight
-```
-
----
-
-### `apply_journal_style()`
-
-Sets global `matplotlib.rcParams` to journal style. Called automatically when `visualization` is imported, but can be called manually to restore settings after overrides.
-
-```python
-from visualization import apply_journal_style
-apply_journal_style()
-```
-
----
-
-## Running the Figure Suite
-
-`test_planets.py` generates and saves 8 figures to `./figures/`. Run it from the project root:
+Run `python science_demo.py` to exercise every module and produce all 10 figures. The script is extensively commented and serves as a complete usage reference.
 
 ```bash
-python test_planets.py
-```
-
-| Figure file | What it shows |
-|---|---|
-| `fig1a_preset_crosssec.png` | Five presets drawn to scale with all features |
-| `fig1b_preset_atm.png` | Atmosphere profiles for all five presets |
-| `fig2a_random_crosssec.png` | Six random planets (seed 2024) drawn to scale |
-| `fig2b_random_atm.png` | Atmosphere profiles for the same six random planets |
-| `fig3_atm_zoo.png` | One planet per atmosphere composition type |
-| `fig4_airless.png` | Four terrain archetypes with atmosphere disabled |
-| `fig5_toggle.png` | Same seed, features added one at a time |
-| `fig6_batch.png` | Statistical histograms over 50-planet batch |
-
-![Batch statistics over 50 planets](figures/fig6_batch.png)
-
-*Physical parameter distributions over a 50-planet batch with all features on. Radius spans 0.14–4.0 R⊕ (nearly 30×). Gravity spans 1.5–47 m/s² (30×). This diversity is intentional — a well-trained agent should handle all of it from a single policy.*
-
----
-
-## Curriculum Design
-
-The feature toggles exist specifically to enable staged training. The recommended progression:
-
-```
-Stage 1 — Baseline
-  randomize_planet=False, planet_preset="earth"
-  atmosphere_enabled=False, oblateness_enabled=False, moons_enabled=False
-  Goal: learn a basic retrograde burn to capture into orbit
-
-Stage 2 — Planet variance
-  randomize_planet=True
-  radius_range=(0.8·R⊕, 1.2·R⊕), density_range=(4500, 6000)
-  atmosphere_enabled=False
-  Goal: learn to read planet_radius_norm and surface_grav_norm from obs
-
-Stage 3 — Thin atmosphere
-  atmosphere_enabled=True, atmosphere_composition=CO2_THIN
-  Goal: learn to account for mild drag during insertion passes
-
-Stage 4 — Full atmosphere diversity
-  atmosphere_enabled=True  (all compositions)
-  Goal: generalise across Earth-like, Venus-like, and gas-giant envelopes
-
-Stage 5 — Oblateness + full planet diversity
-  oblateness_enabled=True, full radius/density ranges
-  Goal: handle J2-induced perturbations during multi-orbit insertions
-
-Stage 6 — All features on
-  magnetic_field_enabled=True, moons_enabled=True
-  Goal: handle the full randomised environment
+python science_demo.py
+# Runs in ~30 seconds, outputs:
+#   science_figures/fig01_solar_system_comparison.png  (+ .pdf)
+#   science_figures/fig02_interior_profiles.png
+#   science_figures/fig03_star_habitable_zones.png
+#   science_figures/fig04_atmosphere_science.png
+#   science_figures/fig05_habitability_radar.png
+#   science_figures/fig06_orbital_mechanics.png
+#   science_figures/fig07_ground_track_coverage.png
+#   science_figures/fig08_surface_energy.png
+#   science_figures/fig09_tidal_dynamics.png
+#   science_figures/fig10_mission_design.png
 ```
 
 ---
 
-## Recommended RL Algorithms
+## 7. Visualisations
+
+### fig01 — Solar system overview
+
+![fig01](science_figures/fig01_solar_system_comparison.png)
+
+Five preset planets drawn to scale using `ref_radius`. Interior structure shown as pie charts. Earth and Venus are nearly identical in radius. The Moon and Titan are both small — Titan slightly larger.
+
+---
+
+### fig02 — Interior model: derived quantities
+
+![fig02](science_figures/fig02_interior_profiles.png)
+
+Four bar charts showing what the interior model physically derives: moment of inertia factor, J2 harmonic, surface magnetic field strength, and radiogenic heat flux. All values are computed from layer densities and radii — none are hand-set.
+
+---
+
+### fig03 — Stellar habitable zones
+
+![fig03](science_figures/fig03_star_habitable_zones.png)
+
+Left: conservative HZ bands (solid) and optimistic extensions (transparent) for six real stars. Vertical dots mark Venus, Earth, and Mars positions where applicable. Right: XUV/bolometric luminosity ratio — M-dwarfs emit proportionally more high-energy radiation, driving atmospheric escape.
+
+---
+
+### fig04 — Atmosphere science
+
+![fig04](science_figures/fig04_atmosphere_science.png)
+
+Six panels: (a-c) multi-layer temperature and density profiles for Earth, Venus, and Titan; (d) Jeans escape parameter λ for five species across all five planets — values above the dashed λ=20 line indicate stable long-term retention; (e) CO₂ greenhouse forcing across 9 orders of magnitude in partial pressure with Mars/Earth/Venus calibration points; (f) surface temperature vs equilibrium temperature showing the greenhouse amplification for each planet.
+
+---
+
+### fig05 — Habitability radar
+
+![fig05](science_figures/fig05_habitability_radar.png)
+
+Ten-factor radar charts for six worlds. Earth fills most of the radar (score 0.84, Grade A). Mars is cold and magnetically weak (0.36, Grade D). Venus fails on temperature (0.23, Grade F). A randomly generated Super-Earth scores 0.66 (Grade B) — bigger radius helps gravity but its HZ position is slightly off-centre.
+
+---
+
+### fig06 — Orbital mechanics
+
+![fig06](science_figures/fig06_orbital_mechanics.png)
+
+Six panels: (a) J2 nodal precession rate vs altitude for four inclinations — the dashed line shows the sun-synchronous rate (+0.986°/day); (b) sun-synchronous inclination vs altitude for Earth and Mars; (c) frozen orbit eccentricity vs inclination with critical inclination markers; (d) atmospheric drag lifetime on a log scale; (e) annual station-keeping ΔV; (f) repeat ground-track solutions coloured by repeat period.
+
+---
+
+### fig07 — Ground track and coverage
+
+![fig07](science_figures/fig07_ground_track_coverage.png)
+
+Left: 3-day ground track of a 500 km / 98° orbit coloured by elapsed time — the westward shift between successive passes is the signature of J2 nodal precession combined with Earth's rotation. Right: surface coverage heat map after 3 days with a 120 km swath — 98.7% of the surface observed at least once.
+
+---
+
+### fig08 — Surface energy maps
+
+![fig08](science_figures/fig08_surface_energy.png)
+
+Top row: daily-mean insolation [W/m²] at northern solstice, equinox, and southern solstice (obliquity 23.5°). The hot pole shifts from north to south across the year. Bottom row: corresponding surface temperature maps with white dashed contours at 273 K and 373 K marking the liquid water window.
+
+---
+
+### fig09 — Tidal dynamics
+
+![fig09](science_figures/fig09_tidal_dynamics.png)
+
+Four panels: (a) tidal heating power vs orbital distance for an Io-like moon around Earth, Mars, and Jupiter — shows why Io is so dramatically heated; (b) tidal locking timescale for Earth-mass planets around the Sun and Proxima Centauri — planets in Proxima's HZ lock in well under 1 Gyr; (c) fluid Roche limits for Earth/Mars/Venus with different satellite densities; (d) orbital eccentricity required to maintain a subsurface liquid ocean on a generic moon.
+
+---
+
+### fig10 — Mission design
+
+![fig10](science_figures/fig10_mission_design.png)
+
+Six panels: (a) orbital insertion ΔV vs arrival v∞ for three planets; (b) aerobraking campaign — apoapsis altitude and peak heating vs pass number; (c) stacked ΔV budget for 5-year missions to three destinations; (d) Mars gravity assist bending angle vs v∞; (e) insertion ΔV vs target orbit altitude; (f) Earth→Mars porkchop plot showing C3 (launch energy) over a 2-year departure/arrival grid — green valleys are optimal launch windows.
+
+---
+
+## 8. Physics & Calibration Notes
+
+### What is derived vs what is assumed
+
+| Property | Derived from | Accuracy |
+|---|---|---|
+| J2 | MoI + rotation (empirical power-law) | ~15–20% for rocky planets |
+| Surface B-field | Core size + heat flux (Christensen 2010 scaling) | Order of magnitude |
+| Radiogenic heat flux | Layer densities + BSE abundances + decay | ~30% |
+| Scale height | Composition mole fractions + gravity | Exact (ideal gas) |
+| Greenhouse dT | CO₂/CH₄/H₂ forcing + H₂O feedback | ~20–40% |
+| Surface temperature | T_eq + iterative greenhouse solve | ~20 K absolute error |
+| Jeans escape timescale | Hunten (1973) formula | Order of magnitude |
+| Drag lifetime | King-Hele formula + thermospheric model | Factor of ~2 |
+
+### Known calibration offsets
+
+- **Earth MoI**: model gives 0.348, PREM measured value is 0.3307. Difference is ~5% and is due to our simplified 4-layer model vs. the actual continuous density profile.
+- **Earth J2**: model gives 1.15×10⁻³, observed is 1.083×10⁻³. The empirical power-law formula (calibrated to Earth and Mars) is accurate to ~6%.
+- **Io tidal heating**: model gives ~2×10¹³ W, observed is ~10¹⁴ W — one order of magnitude off. This is acceptable for a simplified eccentricity-tide model; the Io heating involves resonant forcing from other Galilean moons which is not modelled.
+
+### Physical models used
+
+| Sub-system | Model | Reference |
+|---|---|---|
+| Atmosphere density | Exponential: ρ(h) = ρ₀ exp(−h/H) | Standard |
+| Multi-layer temperature | Piecewise linear lapse + isothermal | Pierrehumbert (2010) |
+| Habitable zone | S_eff coefficients | Kopparapu et al. (2013) |
+| XUV luminosity evolution | Power-law age decay | Ribas et al. (2005) |
+| CO₂ greenhouse forcing | Log + power-law | Byrne & Goldblatt (2014) |
+| Tidal heating | Murray-Dermott formula | Murray & Dermott (1999) |
+| Tidal locking | Peale (1977) timescale | Peale (1977) |
+| J2 precession | Brouwer first-order theory | Vallado (2013) |
+| Frozen orbit | Liu (1974) condition | Liu (1974) |
+| Lambert's problem | Lancaster-Blanchard method | Izzo (2015) |
+| Drag lifetime | King-Hele two-regime model | King-Hele (1987) |
+| Dynamo scaling | Christensen (2010) | Christensen (2010) |
+
+---
+
+## 9. RL Training Guide
+
+### Environment features
+
+The `OrbitalInsertionEnv` is fully Gymnasium-compatible. The key feature for generalisation research is that indices 6–9 of the observation vector encode the **planet identity** — radius, gravity, atmosphere density, and target altitude relative to planet size. A policy that learns to read these values can adapt its thrust strategy to different planets without retraining.
+
+### Curriculum stages
+
+```python
+# Stage 1: Fixed planet, no drag
+env = OrbitalInsertionEnv(randomize_planet=False, planet_preset="earth",
+                           atmosphere_enabled=False)
+
+# Stage 2: Varied planet size, thin atmosphere
+env = OrbitalInsertionEnv(randomize_planet=True, atmosphere_enabled=True,
+                           oblateness_enabled=False)
+
+# Stage 3: Full complexity
+env = OrbitalInsertionEnv(randomize_planet=True, atmosphere_enabled=True,
+                           oblateness_enabled=True, moons_enabled=True)
+```
+
+### Recommended algorithms
 
 | Algorithm | Notes |
 |---|---|
-| **SAC** (Soft Actor-Critic) | Best overall. Sample-efficient, handles continuous thrust naturally, stable with dense rewards |
-| **TD3** | Deterministic alternative to SAC. Slightly more stable in early training |
-| **PPO** | Easy baseline, interpretable, works well with normalised observations |
-| **SAC + HER** | Add Hindsight Experience Replay if you switch to sparse rewards |
-| **MAML / PEARL** | Meta-RL: use obs[6–9] as the task context vector for explicit fast adaptation to new planets |
-
-For generalisation research, **MAML** or **PEARL** are natural fits. The planet identity encoded in `obs[6:10]` acts as the task descriptor — inner-loop adaptation at test time gives the agent a few gradient steps (or a context encoder rollout) to calibrate to the new planet before committing to a burn.
+| **SAC** | Best for continuous thrust. Sample-efficient. Start here. |
+| **TD3** | Deterministic policy. More stable early in training. |
+| **PPO** | Good baseline. Interpretable. Works well with observation normalisation. |
+| **MAML / PEARL** | Meta-RL for explicit fast adaptation — obs[6:10] is the task context. |
 
 ---
 
-## Physics Reference
+## 10. TODO & Roadmap
 
-### Equations of Motion
+### High priority
 
-The full state vector propagated at each RK4 step is:
+- [ ] **`population.py`** — Statistical analysis over planet batches: mass-radius diagram with theoretical composition lines (pure iron / rocky / water / H₂), parameter correlation matrix, habitability distribution plots
+- [ ] **Extended visualiser** — `plot_ground_track_map()` (Mollweide/Robinson projection with terminator line), `plot_porkchop()` (standard mission design contour plot), `plot_mass_radius_diagram()` (with interior composition curves), `plot_orbit_evolution()` (element drift over time)
+- [ ] **Planet serialisation** — `planet.to_json()` / `Planet.from_json()`, SHA-256 fingerprint for reproducibility, YAML support for human-readable configs
 
-```
-s = [x, y, z, vx, vy, vz, mass, heat_load]
-```
+### Medium priority
 
-**Equations:**
+- [ ] **N-body integrator** — Replace the static moon perturbation with a proper symplectic (leapfrog / Yoshida) integrator. Enables: correct multi-moon dynamics, Lagrange point stability, Kozai-Lidov oscillations
+- [ ] **Proper thermosphere model** — Replace the empirical two-regime drag density with a physics-based thermosphere (scale height varies with solar activity). Makes drag lifetime predictions more accurate
+- [ ] **Carbonate-silicate cycle** — Long-term CO₂ thermostat connecting volcanism → weathering → drawdown → temperature. Would close the atmosphere evolution loop for multi-Gyr simulations
+- [ ] **Observation geometry module** — Ground pixel size, emission/incidence/phase angles, SNR estimates. Connects the science orbit to actual data quality
+- [ ] **Data volume and downlink budget** — Contact windows, link budget (Friis equation), data rate vs. transmission power tradeoffs
 
-```
-ds/dt:
-  ẋ  = vx
-  ẏ  = vy
-  ż  = vz
-  v̇x = a_grav_x + a_drag_x + a_thrust_x
-  v̇y = a_grav_y + a_drag_y + a_thrust_y
-  v̇z = a_grav_z + a_drag_z + a_thrust_z
-  ṁ  = −|T| / (Isp · g₀)
-  Q̇  = k · √ρ · |v|³         (Sutton-Graves aeroheating)
-```
+### Lower priority / research extensions
 
-### Gravity
+- [ ] **Atmospheric evolution over time** — Run the Jeans escape + outgassing model forward in time. Reproduce why Mars lost its atmosphere and Earth didn't
+- [ ] **Exoplanet characterisation workflow** — Given a mass + radius measurement (as from a transit/RV campaign), infer interior structure, atmosphere class, and habitability score
+- [ ] **Multi-body gravity assist chains** — Automated VVEJGA-style resonant flyby sequence planner
+- [ ] **Spacecraft thermal model** — Heat load on spacecraft surfaces (not just Sutton-Graves aeroheating); eclipse/illumination cycles; radiator sizing
+- [ ] **Atmospheric entry corridor** — Entry interface → peak heating → parachute deployment → landing. Full EDL sequence for lander/probe missions
+- [ ] **Tectonic activity proxy** — Connect interior heat flux to surface age distribution and resurfacing rate; affects atmosphere composition over time
+- [ ] **Binary star habitability** — Circumbinary HZ for S-type and P-type orbits around stellar pairs
+- [ ] **Magnetic field topology** — Dipole + higher-order terms; magnetopause standoff distance vs. solar wind pressure; Van Allen belt analogue
+- [ ] **Web or notebook interface** — Jupyter widget or interactive dashboard for the habitability and mission design tools without writing code
 
-| Mode | Formula |
-|---|---|
-| Point mass | `a_grav = −μ · r / |r|³` |
-| J2 correction (when enabled) | Full ECI perturbation: `a_J2 = (3/2)·J2·μ·Rₑ²/|r|⁵ · (...)` |
+### Known bugs / limitations
 
-### Atmosphere
-
-| Quantity | Formula |
-|---|---|
-| Density | `ρ(h) = ρ₀ · exp(−h / H)` |
-| Pressure | `P(h) = P₀ · exp(−h / H)` |
-| Temperature (troposphere) | `T(h) = T₀ − Γ·h` |
-| Temperature (stratosphere) | `T = T(h_tropo)` (isothermal) |
-| Drag force | `F_drag = ½·ρ·v²·Cd·A·k_drag` |
-| Heat flux | `q̇ = k·√ρ·v³` |
-
-### Propulsion
-
-| Quantity | Formula |
-|---|---|
-| Thrust force | Vector: `F_thrust = T̂ · |T|` where `|T| ≤ max_thrust` |
-| Mass flow | `ṁ = −|T| / (Isp · 9.80665)` |
-| Exhaust velocity | `vₑ = Isp · g₀` |
-
-### Integration
-
-| Parameter | Value |
-|---|---|
-| Default method | Fixed-step RK4 |
-| Alternative | Adaptive RK45 (set `method="RK45"`) |
-| Default timestep | 10 s |
-| Recommended for aerobraking | 1–2 s |
+- Mars J2 from the interior model gives 1.52×10⁻³ vs. observed 1.96×10⁻³ (~22% low). The empirical J2 power-law was calibrated to Earth and over-corrects for Mars's different density profile.
+- Porkchop Lambert solver occasionally produces NaN cells at very short transfer times (<30 days) — these are correctly masked out but the minimum-energy window may appear fragmented in some date ranges.
+- The `raan_control_dv_per_year` station-keeping formula is capped at 200 m/s/yr to prevent runaway values; this means orbits far from their target RAAN rate will show the cap value rather than the true cost.
+- Ground track coverage map has a small artifact at the anti-meridian (±180° boundary) where some swath cells wrap incorrectly. Does not affect total coverage fraction significantly.
 
 ---
 
-## Physical Constants (exported from `core`)
+## 11. Dependencies
 
-```python
-from core import G, R_EARTH, M_EARTH
-
-G       # 6.67430e-11  m³ kg⁻¹ s⁻²
-R_EARTH # 6.371e6      m
-M_EARTH # 5.972e24     kg
 ```
+numpy      >= 1.21
+matplotlib >= 3.5
+gymnasium  >= 0.26   (optional — env.py stubs gracefully without it)
+```
+
+No compiled code. No GPU. Tested on Python 3.9, 3.10, 3.11, 3.12.
 
 ---
 
-## Dependencies
-
-```
-numpy      ≥ 1.21
-matplotlib ≥ 3.5
-gymnasium  ≥ 0.26    (optional — env.py stubs gracefully if absent)
-```
-
-No compiled extensions. No GPU. No external simulation framework. The entire physics engine is a self-contained ~200-line pure-Python RK4 integrator in `core/physics.py`.
-
----
-
-## License
+## 12. License
 
 MIT
