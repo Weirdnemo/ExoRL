@@ -50,3 +50,30 @@ from core.habitability import (
     HabitabilityAssessment, assess_habitability,
     size_class, composition_class,
 )
+
+# ── Steps 3-5: Orbital, Ground Track, Surface Energy, Tidal, Mission ─────────
+from core.orbital_analysis import (
+    J2Analysis, SunSynchronousOrbit, FrozenOrbit,
+    DragLifetime, StationKeeping, RepeatGroundTrack, OrbitDesign,
+    semi_major_axis_from_altitude, orbital_period, circular_speed,
+)
+from core.ground_track import (
+    propagate_ground_track, compute_coverage_map,
+    coverage_analysis, time_to_full_coverage_days,
+    mean_revisit_time_days, find_passes, GroundTrackPoint, CoverageMap,
+)
+from core.surface_energy import (
+    compute_insolation_map, compute_temperature_map,
+    surface_energy_balance, permanent_shadow_latitude_deg,
+    InsolationMap, TemperatureMap,
+)
+from core.tidal import (
+    TidalHeating, TidalLocking, RocheLimit, OrbitalMigration,
+    analyse_tidal, TidalAnalysis,
+)
+from core.mission import (
+    DeltaVBudget, AerobrakingCampaign, AerobrakingPass,
+    orbital_insertion_dv, plan_aerobraking,
+    lambert_solve, porkchop_data, GravityAssist,
+    build_mission_dv_budget,
+)
