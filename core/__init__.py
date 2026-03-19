@@ -77,3 +77,32 @@ from core.mission import (
     lambert_solve, porkchop_data, GravityAssist,
     build_mission_dv_budget,
 )
+
+# ── Phase 1: Interplanetary physics ──────────────────────────────────────────
+from core.heliocentric import (
+    LambertSolver, KeplerPropagator, HeliocentricIntegrator,
+    HelioState, planet_state, soi_radius, transfer_summary,
+    MU_SUN,
+)
+from core.soi import (
+    SphereOfInfluence, HyperbolicDeparture, HyperbolicArrival,
+    HyperbolicOrbit, SOITransitionDetector, SOIEvent,
+    laplace_soi_radius, hill_sphere_radius,
+    gravity_assist_turn, patched_conic_budget,
+)
+from core.launch_window import (
+    PorkchopData, LaunchWindow, LaunchDecisionSpace,
+    synodic_period_days, orbital_period_days, compute_transfer,
+)
+from core.climate import (
+    EnergyBalanceModel, ClimateResult, BifurcationPoints,
+    find_bifurcation_points, climate_map, climate_habitability_score,
+    ClimateState,
+)
+from core.observation import (
+    characterise_observations, TransitSignal,
+    transit_depth, transit_depth_ppm, transit_duration,
+    geometric_transit_probability, rv_semi_amplitude,
+    transmission_spectrum, transmission_spectroscopy_metric,
+    atmospheric_scale_height,
+)
