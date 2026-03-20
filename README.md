@@ -137,13 +137,16 @@ The generator spans 0.1–4× Earth radius and 0.003–100× Earth mass. Atmosph
 **Figures from this module:**
 
 *Five solar system presets — cross-sections and atmosphere profiles:*
-![Solar system presets](figures/fig1_presets.png)
+
+![Solar system presets](planet_figures/fig1a_preset_crosssec.png)
 
 *Six randomly generated planets — cross-sections and atmosphere profiles:*
-![Random planets](figures/fig2_random.png)
+
+![Random planets](planet_figures/fig2b_random_atm.png)
 
 *Batch statistics across 50 randomly generated planets:*
-![Batch stats](figures/fig6_batch_stats.png)
+
+![Batch stats](planet_figures/fig6_batch.png)
 
 ---
 
@@ -194,6 +197,7 @@ The model divides the planet into layers — inner core, outer core, lower mantl
 Heat flux is ~4× low. J2 and MoI are within 5–22%.
 
 **Figure — interior-derived quantities across all five solar system analogues:**
+
 ![Interior profiles](science_figures/fig02_interior_profiles.png)
 
 ---
@@ -237,6 +241,7 @@ planet.orbital_distance_m = 1.496e11   # 1 AU
 ```
 
 **Figure — habitable zones and XUV flux for all seven stellar presets:**
+
 ![Stellar habitable zones](science_figures/fig03_star_habitable_zones.png)
 
 ---
@@ -279,6 +284,7 @@ print(result["jeans_escape_rate"])  # atmospheric escape kg/s
 The model computes the thermal escape rate using the Jeans parameter — the ratio of gravitational to thermal energy at the exobase. Small planets with hot, lightweight atmospheres lose gas quickly; massive, cold planets retain theirs over geological timescales.
 
 **Figure — multi-layer profiles, Jeans escape rates, and greenhouse warming:**
+
 ![Atmosphere science](science_figures/fig04_atmosphere_science.png)
 
 ---
@@ -375,6 +381,7 @@ Each factor scores 0–1. The overall score is the geometric mean. Any factor sc
 | Titan | 0.135 | F |
 
 **Figure — habitability radar charts for all five presets plus a random planet:**
+
 ![Habitability radars](science_figures/fig05_habitability_radar.png)
 
 ---
@@ -415,6 +422,7 @@ print(f"Orbit lifetime: {decay:.0f} days")
 ```
 
 **Figure — J2 precession rates, sun-sync inclinations, frozen orbit map, and drag lifetimes:**
+
 ![Orbital mechanics](science_figures/fig06_orbital_mechanics.png)
 
 ---
@@ -443,6 +451,7 @@ next_pass = gt.next_pass(lat=35.0, lon=135.0, from_time=0)
 ```
 
 **Figure — ground track and 3-day coverage map:**
+
 ![Ground track](science_figures/fig07_ground_track_coverage.png)
 
 ---
@@ -472,6 +481,7 @@ ice_lat = sem.polar_ice_latitude()
 ```
 
 **Figure — insolation and temperature maps at solstice, equinox, and perihelion:**
+
 ![Surface energy](science_figures/fig08_surface_energy.png)
 
 ---
@@ -495,6 +505,7 @@ da_dt    = tidal.orbital_migration_rate()      # m/s — orbital drift rate
 ```
 
 **Figure — tidal heating, locking map, Roche limits, and orbital migration timescales:**
+
 ![Tidal dynamics](science_figures/fig09_tidal_dynamics.png)
 
 ---
@@ -580,18 +591,23 @@ print(best.report())
 **Figures — mission design delta-V, heliocentric transfer, and porkchop:**
 
 *Delta-V budgets, aerobraking, and mission overview:*
+
 ![Mission design](science_figures/fig10_mission_design.png)
 
 *Heliocentric transfer arc coloured by spacecraft speed:*
+
 ![Heliocentric transfer](science_figures/fig11_heliocentric_transfer.png)
 
 *Porkchop — launch energy (C3) over one Earth–Mars synodic period:*
+
 ![Porkchop C3](science_figures/fig12_porkchop_c3.png)
 
 *Porkchop — arrival excess speed with time-of-flight contours:*
+
 ![Porkchop v∞](science_figures/fig13_porkchop_vinf.png)
 
 *4-panel mission dashboard (transfer arc, C3, arrival v∞, SOI approach):*
+
 ![Transfer dashboard](science_figures/fig14_transfer_dashboard.png)
 
 ---
@@ -756,15 +772,19 @@ Only 16.4% of randomly generated planets score above 0.5. This is why the curric
 **Figures — population statistics across 500 planets:**
 
 *Mass-radius diagram with Zeng (2013) composition curves, coloured by habitability score:*
+
 ![Mass-radius](science_figures/fig15_mass_radius.png)
 
 *Habitability score distribution with A–F grade boundaries:*
+
 ![Habitability distribution](science_figures/fig16_habitability_distribution.png)
 
 *Pearson correlation matrix between all physical properties:*
+
 ![Correlation heatmap](science_figures/fig17_correlation_heatmap.png)
 
 *Full 4-panel population statistics dashboard:*
+
 ![Population dashboard](science_figures/fig18_population_dashboard.png)
 
 ---
@@ -919,9 +939,9 @@ while not (done or trunc):
 
 | Figure | File | What it shows |
 |---|---|---|
-| fig1_presets | `figures/fig1_presets.png` | Solar system preset cross-sections and atmosphere profiles |
-| fig2_random | `figures/fig2_random.png` | Six randomly generated planets |
-| fig6_batch_stats | `figures/fig6_batch_stats.png` | Batch statistics across 50 random planets |
+| fig1_presets | `planet_figures/fig1b_preset_atm.png` | Solar system preset cross-sections and atmosphere profiles |
+| fig2_random | `planet_figures/fig2b_random_atm.png` | Six randomly generated planets |
+| fig6_batch_stats | `planet_figures/fig6_batch.png` | Batch statistics across 50 random planets |
 | fig01 | `science_figures/fig01_solar_system_comparison.png` | Cross-sections and interior pie charts for all 5 presets |
 | fig02 | `science_figures/fig02_interior_profiles.png` | J2, B-field, heat flux, MoI from interior model |
 | fig03 | `science_figures/fig03_star_habitable_zones.png` | HZ boundaries and XUV flux for 7 stellar presets |
