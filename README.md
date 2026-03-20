@@ -2,8 +2,6 @@
 
 A physically consistent planetary science and reinforcement learning toolkit. Every number in the system connects — the planet's interior structure determines its magnetic field, which feeds into the habitability score, which weights the RL reward signal. Nothing is hand-tuned to be convenient.
 
-**11,481 lines across 20 modules.** Three trainable Gymnasium environments. 18 publication-quality figures.
-
 ---
 
 ## Index
