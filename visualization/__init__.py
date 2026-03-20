@@ -14,3 +14,9 @@ from visualization.visualizer import (
     W_PINK, W_SKY, W_YELLOW,
     FT, FL, FK, FG, FA, LW, LW2,
 )
+from visualization.visualizer import (
+    plot_mass_radius,
+    plot_habitability_distribution,
+    plot_correlation_heatmap,
+    plot_population_dashboard,
+)

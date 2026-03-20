@@ -968,3 +968,301 @@ def plot_transfer_dashboard(
 
     save_figure(fig, filename, output_dir)
     return fig
+
+
+# =============================================================================
+# Population statistics plots
+# =============================================================================
+
+def plot_mass_radius(population,
+                      ax=None,
+                      figsize=(6.5, 5.5),
+                      show_composition_lines=True,
+                      colour_by="hab_score",
+                      highlight_solar=True):
+    """
+    Mass-radius diagram with Zeng (2013) composition curves.
+    Planets coloured by habitability score (default) or composition.
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.colors as mcolors
+    from core.population import composition_radius
+
+    standalone = ax is None
+    if standalone:
+        fig, ax = plt.subplots(figsize=figsize,
+                               gridspec_kw=dict(left=0.11, right=0.88,
+                                                top=0.91, bottom=0.11))
+        fig.patch.set_facecolor("white")
+    _ax(ax)
+
+    recs = population.records
+    masses  = np.array([r.mass_earth   for r in recs])
+    radii   = np.array([r.radius_earth for r in recs])
+
+    # Colour mapping
+    if colour_by == "hab_score":
+        c_vals = np.array([r.hab_score for r in recs])
+        cmap   = "RdYlGn"
+        clabel = "Habitability score"
+        vmin, vmax = 0.0, 1.0
+    elif colour_by == "density":
+        c_vals = np.array([r.density_kg_m3 / 1000 for r in recs])
+        cmap   = "plasma"
+        clabel = "Density (g/cm³)"
+        vmin, vmax = 1.0, 12.0
+    else:
+        c_vals = np.array([r.hab_score for r in recs])
+        cmap   = "RdYlGn"
+        clabel = "Habitability score"
+        vmin, vmax = 0.0, 1.0
+
+    sc = ax.scatter(masses, radii, c=c_vals, cmap=cmap,
+                    vmin=vmin, vmax=vmax,
+                    s=12, alpha=0.65, linewidths=0, zorder=3)
+    cbar = ax.get_figure().colorbar(sc, ax=ax, shrink=0.75, pad=0.02)
+    cbar.set_label(clabel, fontsize=FA)
+    cbar.ax.tick_params(labelsize=FA-1)
+
+    # Composition curves
+    if show_composition_lines:
+        m_range = np.logspace(np.log10(max(masses.min()*0.8, 0.05)),
+                               np.log10(masses.max()*1.2), 200)
+        styles = [
+            ("iron",    "#AA3333", "-",  "Pure iron"),
+            ("rocky",   "#885522", "--", "Rocky  (Zeng 2013)"),
+            ("water50", "#3366AA", "-.", "50% water"),
+            ("water",   "#2255CC", ":",  "Pure water"),
+        ]
+        for comp, col, ls, lbl in styles:
+            r_vals = [composition_radius(m, comp) for m in m_range]
+            ax.plot(m_range, r_vals, color=col, lw=1.1, ls=ls,
+                    alpha=0.75, label=lbl, zorder=2)
+
+    # Solar system reference points
+    if highlight_solar:
+        solar = [
+            ("Earth",  1.00, 1.00, W_BLUE),
+            ("Venus",  0.815, 0.950, W_ORANGE),
+            ("Mars",   0.107, 0.532, W_RED),
+            ("Moon",   0.0123, 0.272, "#888888"),
+        ]
+        for name, m, r, col in solar:
+            ax.plot(m, r, "D", ms=6, color=col,
+                    markeredgecolor=W_BLACK, markeredgewidth=0.5, zorder=5)
+            ax.text(m*1.08, r, name, fontsize=FA-0.5, color=col,
+                    va="center", fontweight="bold")
+
+    ax.set_xscale("log"); ax.set_yscale("log")
+    ax.set_xlabel("Mass  (M⊕)", fontsize=FL)
+    ax.set_ylabel("Radius  (R⊕)", fontsize=FL)
+    ax.tick_params(labelsize=FK)
+    if show_composition_lines:
+        ax.legend(fontsize=FG, loc="upper left", frameon=False,
+                  handlelength=1.5)
+    ax.set_title(f"Mass-radius diagram  (n = {len(recs)})",
+                  fontsize=FT, fontweight="bold", pad=4)
+
+    if standalone:
+        return ax.get_figure()
+    return ax
+
+
+def plot_habitability_distribution(population, ax=None, figsize=(6.5, 4.5)):
+    """
+    Habitability score histogram with grade annotations.
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    standalone = ax is None
+    if standalone:
+        fig, ax = plt.subplots(figsize=figsize,
+                               gridspec_kw=dict(left=0.10, right=0.97,
+                                                top=0.91, bottom=0.12))
+        fig.patch.set_facecolor("white")
+    _ax(ax)
+
+    scores = np.array([r.hab_score for r in population.records])
+    n      = len(scores)
+
+    # Histogram
+    bins = np.linspace(0, 1, 26)
+    counts, edges = np.histogram(scores, bins=bins)
+
+    # Colour bars by grade thresholds
+    grade_colors = {
+        "A": W_GREEN, "B": W_BLUE, "C": W_ORANGE,
+        "D": W_RED,   "F": "#888888",
+    }
+    grade_bounds = {"A": 0.75, "B": 0.60, "C": 0.45, "D": 0.30, "F": 0.0}
+
+    def grade_color(score):
+        if score >= 0.75: return W_GREEN
+        if score >= 0.60: return W_BLUE
+        if score >= 0.45: return W_ORANGE
+        if score >= 0.30: return W_RED
+        return "#888888"
+
+    for i, (lo, hi) in enumerate(zip(edges[:-1], edges[1:])):
+        mid = (lo + hi) / 2
+        ax.bar(lo, counts[i], width=(hi-lo)*0.92, align="edge",
+               color=grade_color(mid), alpha=0.80, edgecolor="white", lw=0.3)
+
+    # Grade boundary lines
+    for grade, thresh in grade_bounds.items():
+        if thresh > 0:
+            ax.axvline(thresh, color="#444444", lw=0.8, ls="--", alpha=0.6)
+            ax.text(thresh + 0.01, ax.get_ylim()[1]*0.95 if ax.get_ylim()[1] > 0 else 5,
+                    f"Grade {grade}", fontsize=FA-0.5, color="#444444", va="top")
+
+    # Stats annotation
+    mean_s = scores.mean()
+    n_hab  = int(np.sum(scores > 0.5))
+    ax.axvline(mean_s, color=W_BLACK, lw=1.2, ls="-", alpha=0.7)
+    ax.text(mean_s + 0.01, 0.95, f"mean = {mean_s:.3f}",
+            transform=ax.get_xaxis_transform(),
+            fontsize=FA, color=W_BLACK, va="top")
+
+    ax.set_xlabel("Habitability score", fontsize=FL)
+    ax.set_ylabel("Count", fontsize=FL)
+    ax.tick_params(labelsize=FK)
+    ax.set_xlim(0, 1)
+    ax.set_title(
+        f"Habitability distribution  (n={n},  {n_hab} score > 0.5  "
+        f"[{100*n_hab/n:.0f}%])",
+        fontsize=FT, fontweight="bold", pad=4)
+
+    if standalone:
+        return ax.get_figure()
+    return ax
+
+
+def plot_correlation_heatmap(population, ax=None, figsize=(7.0, 6.0)):
+    """
+    Pearson correlation heatmap between key planetary properties.
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    standalone = ax is None
+    if standalone:
+        fig, ax = plt.subplots(figsize=figsize,
+                               gridspec_kw=dict(left=0.18, right=0.97,
+                                                top=0.97, bottom=0.18))
+        fig.patch.set_facecolor("white")
+    _ax(ax)
+
+    corr, keys = population.correlation_matrix()
+
+    labels = {
+        "mass": "Mass", "radius": "Radius", "density": "Density",
+        "gravity": "Gravity", "j2": "J₂", "b_field": "B-field",
+        "heat_flux": "Heat flux", "moi": "MoI",
+        "P_srf": "Atm pressure", "T_surf": "T surface",
+        "hab_score": "Habitability", "transit_ppm": "Transit depth",
+        "rv_K": "RV amplitude", "dist_au": "Orb. distance",
+    }
+    display = [labels.get(k, k) for k in keys]
+    n = len(keys)
+
+    im = ax.imshow(corr, cmap="RdBu_r", vmin=-1, vmax=1, aspect="auto")
+    ax.get_figure().colorbar(im, ax=ax, shrink=0.75, pad=0.02,
+                              label="Pearson r", fraction=0.03)
+
+    ax.set_xticks(range(n)); ax.set_yticks(range(n))
+    ax.set_xticklabels(display, rotation=45, ha="right", fontsize=FA-0.5)
+    ax.set_yticklabels(display, fontsize=FA-0.5)
+
+    # Annotate cells with |r| > 0.4
+    for i in range(n):
+        for j in range(n):
+            v = corr[i, j]
+            if abs(v) > 0.4 and i != j:
+                ax.text(j, i, f"{v:.2f}", ha="center", va="center",
+                        fontsize=FA-1.5,
+                        color="white" if abs(v) > 0.7 else W_BLACK)
+
+    ax.set_title("Property correlation matrix", fontsize=FT,
+                  fontweight="bold", pad=4)
+
+    if standalone:
+        return ax.get_figure()
+    return ax
+
+
+def plot_population_dashboard(population, output_dir=".", filename="population_dashboard"):
+    """
+    4-panel population dashboard:
+    (a) Mass-radius diagram
+    (b) Habitability distribution
+    (c) Correlation heatmap
+    (d) RL training context — key stats for the agent
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.gridspec as gridspec
+
+    fig = plt.figure(figsize=(13.0, 10.0))
+    fig.patch.set_facecolor("white")
+    gs  = gridspec.GridSpec(2, 2, figure=fig,
+                             hspace=0.40, wspace=0.35,
+                             left=0.08, right=0.97,
+                             top=0.93, bottom=0.08)
+
+    plot_mass_radius(population, ax=fig.add_subplot(gs[0, 0]))
+    plot_habitability_distribution(population, ax=fig.add_subplot(gs[0, 1]))
+    plot_correlation_heatmap(population, ax=fig.add_subplot(gs[1, 0]))
+
+    # Panel (d): RL training context
+    ax_d = fig.add_subplot(gs[1, 1])
+    _ax(ax_d)
+    ax_d.axis("off")
+
+    stats = population.rl_training_stats()
+    a     = population.arrays()
+    lines = [
+        f"RL training distribution  (n = {stats['n_total']})",
+        "",
+        f"Mass range (5th–95th %ile)",
+        f"  {stats['mass_p5']:.3f} – {stats['mass_p95']:.2f}  M⊕",
+        "",
+        f"Radius range (5th–95th %ile)",
+        f"  {stats['radius_p5']:.3f} – {stats['radius_p95']:.2f}  R⊕",
+        "",
+        f"Gravity range (5th–95th %ile)",
+        f"  {stats['gravity_p5']:.2f} – {stats['gravity_p95']:.2f}  m/s²",
+        "",
+        f"Habitability",
+        f"  Mean score:  {stats['hab_score_mean']:.3f}",
+        f"  Std:         {stats['hab_score_std']:.3f}",
+        f"  Score > 0.5: {100*stats['frac_habitable']:.1f}%",
+        f"  In HZ:       {100*stats['frac_in_hz']:.1f}%",
+        "",
+        f"Physics diversity",
+        f"  Median J2:   {stats['j2_median']:.2e}",
+        f"  Median B:    {stats['b_field_median_uT']:.1f} μT",
+        f"  Has dynamo:  {100*stats['frac_with_dynamo']:.1f}%",
+        "",
+        f"Observation proxy",
+        f"  Transit ppm (median): {stats['transit_ppm_median']:.0f}",
+    ]
+
+    # Composition breakdown
+    comp_counts = {}
+    for r in population.records:
+        comp_counts[r.composition] = comp_counts.get(r.composition, 0) + 1
+    lines.append("")
+    lines.append("Composition breakdown")
+    for comp, cnt in sorted(comp_counts.items(), key=lambda x: -x[1]):
+        lines.append(f"  {comp:<12s} {100*cnt/len(population):.1f}%")
+
+    ax_d.text(0.04, 0.97, "\n".join(lines), transform=ax_d.transAxes,
+               va="top", fontsize=FA-0.5, family="monospace", color=W_BLACK,
+               linespacing=1.35)
+    ax_d.set_title("RL training context", fontsize=FT, fontweight="bold", pad=4)
+
+    fig.suptitle("Planet population statistics", fontsize=FT+2, fontweight="bold")
+    save_figure(fig, filename, output_dir)
+    return fig

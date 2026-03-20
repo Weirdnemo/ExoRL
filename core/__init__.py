@@ -106,3 +106,6 @@ from core.observation import (
     transmission_spectrum, transmission_spectroscopy_metric,
     atmospheric_scale_height,
 )
+
+# ── Interplanetary RL environment ─────────────────────────────────────────────
+from core.interplanetary_env import InterplanetaryEnv, MissionConfig
