@@ -769,7 +769,7 @@ Habitability mean 0.402, std 0.128
 
 Only 16.4% of randomly generated planets score above 0.5. This is why the curriculum mode in `OrbitalInsertionEnv` is useful — without it, most training episodes are on uninhabitable planets where the habitability reward bonus is negligible.
 
-**Figures — population statistics across 2500 planets:**
+**Figures — population statistics across 500 planets:**
 
 *Mass-radius diagram with Zeng (2013) composition curves, coloured by habitability score:*
 
