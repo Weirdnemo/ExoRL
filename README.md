@@ -782,12 +782,35 @@ python transfer_vis_demo.py
 
 ## 9. Known Limitations
 
-**Heat flux** is ~4× lower than Earth's real value (model: 22 mW/m², real: 87 mW/m²). The model uses a radiogenic element budget only and does not include secular cooling from planetary formation.
+- **Heat flux** is ~4× lower than Earth's real value. The model uses radiogenic budget only and omits secular cooling.
+- **Venus dynamo** is incorrectly flagged as active. Venus has no magnetic field despite being Earth-sized — the model uses mass-based heuristics that fail here.
+- **Greenhouse warming** underestimates Earth by ~40% (model: 19 K, real: 33 K). Water vapour feedback is not yet implemented — only CO₂ forcing.
+- **Mars J2** is ~22% low due to the empirical power-law interior fit.
+- **Lambert solver** cannot handle exactly 0° or 180° transfer angles (collinear geometry). A 0.001 rad offset resolves it in practice.
 
-**Venus dynamo** is incorrectly flagged as active. Venus has no magnetic field despite being Earth-sized — the model's dynamo condition is based on mass and rotation heuristics that fail for Venus's extremely slow rotation.
+---
 
-**Greenhouse warming** underestimates Earth by ~40% (model: 19 K, real: 33 K). Only CO₂ forcing is implemented. Water vapour feedback, which is responsible for roughly half of Earth's greenhouse effect, is not yet included.
+## 20. Module summary
 
-**Mars J2** is ~22% low. The interior power-law fit was calibrated to Earth and does not fully transfer to Mars's differentiated structure.
-
-**Lambert solver** fails for exactly 0° or 180° transfer angles because the cross product of the position vectors is zero. A small angular offset (0.001 rad) resolves this in practice and is applied automatically in `InterplanetaryEnv`.
+| Module | Lines | Role |
+|---|---|---|
+| `planet.py` | 472 | Central planet object |
+| `generator.py` | 291 | Procedural generator and presets |
+| `interior.py` | 618 | Layered interior model |
+| `star.py` | 475 | Stellar model and habitable zones |
+| `atmosphere_science.py` | 828 | Multi-layer atmosphere |
+| `climate.py` | 816 | 1D energy balance model |
+| `habitability.py` | 682 | 10-factor habitability scorer |
+| `orbital_analysis.py` | 819 | J2, sun-sync, frozen orbit, drag |
+| `ground_track.py` | 492 | Coverage maps and pass finder |
+| `surface_energy.py` | 460 | Insolation and temperature maps |
+| `tidal.py` | 517 | Tidal heating and locking |
+| `mission.py` | 696 | Delta-V budgets and aerobraking |
+| `observation.py` | 654 | Transit, RV, TSM |
+| `heliocentric.py` | 899 | Lambert solver and cruise propagator |
+| `soi.py` | 277 | SOI transitions and frame transforms |
+| `launch_window.py` | 213 | Porkchop and RL decision space |
+| `population.py` | 542 | Batch population statistics |
+| `physics.py` | 292 | RK4 integrator and spacecraft state |
+| `env.py` | 667 | OrbitalInsertionEnv |
+| `interplanetary_env.py` | 771 | InterplanetaryEnv |
