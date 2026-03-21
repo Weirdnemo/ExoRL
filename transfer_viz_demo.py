@@ -1,5 +1,5 @@
 """
-transfer_viz_demo.py — Phase 2 visualisation test for interplanetary transfers.
+transfer_viz_demo.py — visualisation test for interplanetary transfers.
 
 Produces four figures:
   fig11_heliocentric_transfer.png  — Earth-Mars transfer arc in ecliptic plane
@@ -57,15 +57,12 @@ print("\nComputing Earth→Mars transfer trajectory …")
 
 solver = LambertSolver(MU_SUN)
 prop   = KeplerPropagator(MU_SUN)
-
-# Use a realistic 260-day transfer
 tof_s  = 260 * 86400
 r1v, v1p = planet_state(AU, 0.0)
 r2v, v2p = planet_state(1.524 * AU, tof_s)
 
 v1s, v2s = solver.solve(r1v, r2v, tof_s)
 if v1s is None:
-    # fallback: try slightly different arrival
     r2v, v2p = planet_state(1.524 * AU, tof_s, initial_phase_rad=0.01)
     v1s, v2s = solver.solve(r1v, r2v, tof_s)
 
@@ -75,7 +72,6 @@ print(f"  v∞ departure: {vinf_dep/1e3:.3f} km/s")
 print(f"  v∞ arrival:   {vinf_arr/1e3:.3f} km/s")
 print(f"  C3:           {(vinf_dep/1e3)**2:.2f} km²/s²")
 
-# Full trajectory for plotting (300 points)
 times_s     = np.linspace(0, tof_s, 300)
 transfer_traj = prop.orbit_at_time(r1v, v1s, times_s)
 
@@ -109,8 +105,6 @@ print("\nBuilding Mars SOI approach trajectory …")
 mu_mars    = G * mars.mass
 soi_mars_m = laplace_soi_radius(mars.mass, 1.524 * AU)
 
-# Use the best window v∞ for the SOI plot — gives a more physically
-# representative arrival (lower v∞ = more visible gravitational bending)
 v_inf_mars = best_win.vinf_arr_m_s if best_win else vinf_arr
 r_peri     = mars.radius + 300_000
 
@@ -119,11 +113,10 @@ a_hyp = -mu_mars / v_inf_mars**2
 e_hyp = 1.0 + r_peri / abs(a_hyp)
 p_hyp = abs(a_hyp) * (e_hyp**2 - 1)
 
-# True anomaly range: SOI entry (negative nu) to shortly past periapsis
 nu_soi_cos = (p_hyp / soi_mars_m - 1.0) / e_hyp
 nu_soi_cos = max(-1.0, min(1.0, nu_soi_cos))
-nu_soi     = -math.acos(nu_soi_cos)   # negative = approaching
-nu_arr     = 0.5   # 0.5 rad past periapsis (enough to show the curve)
+nu_soi     = -math.acos(nu_soi_cos) 
+nu_arr     = 0.5
 
 nu_vals = np.linspace(nu_soi, nu_arr, 400)
 
@@ -131,12 +124,11 @@ approach_positions = []
 approach_velocities = []
 for nu in nu_vals:
     r_nu = p_hyp / (1 + e_hyp * math.cos(nu))
-    if r_nu > soi_mars_m * 1.05:   # skip points outside SOI
+    if r_nu > soi_mars_m * 1.05:   
         continue
     x = r_nu * math.cos(nu)
     y = r_nu * math.sin(nu)
     v_mag = math.sqrt(mu_mars * (2/r_nu - 1/a_hyp))
-    # Velocity direction: tangent to the hyperbola
     fpa   = math.atan2(e_hyp * math.sin(nu), 1 + e_hyp * math.cos(nu))
     theta = nu + math.pi/2 - fpa
     vx    = -v_mag * math.sin(nu + fpa)
@@ -180,7 +172,6 @@ plt.close(fig11)
 # ─────────────────────────────────────────────────────────────────────────────
 print("[2/4] Porkchop C3 plot …")
 
-# Build RL decision space to get agent choice
 space = LaunchDecisionSpace(
     AU, 1.524 * AU,
     n_dep=12, n_arr=12,
@@ -231,7 +222,7 @@ fig14 = plot_transfer_dashboard(
     transfer_trajectory = transfer_traj,
     tof_s               = tof_s,
     v_inf_dep_m_s       = vinf_dep,
-    v_inf_arr_m_s       = v_inf_mars,   # best window v∞, not arbitrary transfer
+    v_inf_arr_m_s       = v_inf_mars,
     approach_trajectory = approach_traj,
     soi_radius_arr_m    = soi_mars_m,
     star_name           = "Sun",

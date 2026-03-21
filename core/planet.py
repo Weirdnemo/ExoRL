@@ -278,16 +278,12 @@ def _attach_interior_and_star():
     unaffected; the new fields default to None.
     """
     import dataclasses as _dc
-    from core.interior import InteriorConfig, ConvectionState   # noqa: F401
-    from core.star import Star                                   # noqa: F401
+    from core.interior import InteriorConfig, ConvectionState   
+    from core.star import Star                                   
 
-    # ── Add optional fields ───────────────────────────────────────────────────
-    # We extend the dataclass fields list so Planet(interior=...) works.
-    # This is safe because dataclass fields are stored on the class, not instances.
     existing_fields = {f.name for f in _dc.fields(Planet)}
 
-    if "interior" not in existing_fields:
-        # Inject new fields with defaults
+    if "interior" not in existing_fields:        
         Planet.__dataclass_fields__["interior"] = _dc.field(
             default=None, repr=True, compare=True
         )
@@ -298,7 +294,6 @@ def _attach_interior_and_star():
             default=None, repr=False, compare=False
         )
 
-        # Patch __init__ to accept and store new fields
         _orig_init = Planet.__init__
 
         def _new_init(self, *args, interior=None, star_context=None,
@@ -331,7 +326,6 @@ def _attach_interior_and_star():
         """
         if self.interior and self.interior.enabled:
             return self.interior.surface_magnetic_field_T(self.radius, self.mass)
-        # Fallback: map enum to approximate B
         _B_MAP = {
             MagneticFieldStrength.NONE:   0.0,
             MagneticFieldStrength.WEAK:   3e-6,
@@ -467,6 +461,4 @@ def _attach_interior_and_star():
 
     Planet.summary = extended_summary
 
-
-# Run the extension immediately on import
 _attach_interior_and_star()

@@ -344,7 +344,7 @@ class OrbitalMigration:
             perturber_mass_kg, perturber_rotation_period_s
         )
         a  = orbital_distance_m
-        R  = body_radius_m   # this is wrong — should be perturber radius
+        R  = body_radius_m
         # Note: formula uses planet's radius, not moon's
         # We use body_radius_m as a proxy — caller should pass planet radius
         M_moon  = body_mass_kg
@@ -358,7 +358,6 @@ class OrbitalMigration:
         da_dt = (3 * love_number_k2_perturber / tidal_Q_perturber
                  * (M_moon / M_planet) * (R / a)**5 * a * n)
 
-        # Use perturber radius (planet) not body radius (moon)
         if perturber_radius_m is not None:
             R = perturber_radius_m
         da_dt = (3 * love_number_k2_perturber / tidal_Q_perturber
@@ -387,7 +386,7 @@ class OrbitalMigration:
         )
         a = current_orbital_distance_m
         if a > a_sync:
-            return float("inf")  # migrating outward, no impact
+            return float("inf")
 
         # Integrate da/dt from a to R_planet
         # For circular decaying orbit: t = (13/26) × (a^(13/2) - R^(13/2)) / C

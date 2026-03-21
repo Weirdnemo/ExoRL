@@ -1,14 +1,5 @@
 """
 visualizer.py  —  Planet-RL publication figures.
-
-Rules that prevent ALL overlap/clipping:
-  1. No twiny axes.
-  2. No nested GridSpec. Every subplot is added with a flat index.
-  3. Every figure sets left/right/top/bottom/hspace/wspace explicitly.
-  4. Atmosphere profiles are ALWAYS 3 separate side-by-side subplots,
-     never squeezed into a shared cell.
-  5. Cross-section diagrams live in their own figure row.
-  6. Text inside axes only — no annotations outside the axes box.
 """
 
 from __future__ import annotations
@@ -32,7 +23,7 @@ W_SKY     = "#56B4E9"
 W_YELLOW  = "#F0E442"
 W_BLACK   = "#000000"
 WONG      = [W_BLUE, W_RED, W_GREEN, W_ORANGE, W_PINK, W_SKY, W_YELLOW, W_BLACK]
-WONG_CYCLE = WONG  # alias for backward compatibility
+WONG_CYCLE = WONG
 
 C_DENSITY  = W_RED
 C_PRESSURE = W_BLUE
@@ -140,7 +131,7 @@ def save_figure(fig, filename, output_dir=".", dpi_png=300, formats=("png","pdf"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# PLANET CROSS-SECTION  (single axes, no text outside bounds)
+# PLANET CROSS-SECTION
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def plot_planet_cross_section(planet: Planet, ax=None, ref_radius: float = None):
@@ -169,17 +160,15 @@ def plot_planet_cross_section(planet: Planet, ax=None, ref_radius: float = None)
         planet.terrain.terrain_type.name if planet.terrain.enabled else "FLAT",
         "#bbbbbb")
 
-    # Scale factor: planet radius relative to the reference (largest) planet.
-    # ref_radius=None → standalone, fills the axes (scale=1.0).
     if ref_radius is None or ref_radius <= 0:
         scale = 1.0
     else:
-        scale = planet.radius / ref_radius   # 0 < scale <= 1.0
+        scale = planet.radius / ref_radius
 
     # Atmosphere halos (radii are in normalised units × scale)
     if planet.atmosphere.enabled:
         max_alt = planet.atmosphere.scale_height * 5
-        atm_frac = max_alt / planet.radius   # fractional thickness
+        atm_frac = max_alt / planet.radius
         for i in range(6, 0, -1):
             frac = i / 6
             r = scale * (1.0 + atm_frac * frac)
@@ -223,11 +212,9 @@ def plot_planet_cross_section(planet: Planet, ax=None, ref_radius: float = None)
     if planet.moons.enabled:
         tags.append(f"{planet.moons.count}mn")
 
-    # Title above axes (no collision with drawing)
     ax.set_title(planet.name, fontsize=FT, fontweight="bold",
                  color="#111111", pad=4)
 
-    # Stats and tags anchored to fixed positions below the disc
     ax.text(0, -1.75,
             f"R={planet.radius/1e3:,.0f} km   g={planet.surface_gravity:.1f}",
             ha="center", va="center",
@@ -237,7 +224,6 @@ def plot_planet_cross_section(planet: Planet, ax=None, ref_radius: float = None)
                 ha="center", va="center",
                 fontsize=FA-1.0, color="#777777", style="italic", zorder=10)
 
-    # Fixed world-space limits so all planets in a row share the same frame
     ax.set_xlim(-2.9, 2.9)
     ax.set_ylim(-2.55, 1.7)
     return ax
@@ -295,34 +281,27 @@ def plot_atmosphere_profile(planet: Planet, axes=None, max_altitude_km=150):
         _ax(ax)
         ax.fill_betweenx(alts_km, d, alpha=0.10, color=color)
         ax.plot(d, alts_km, color=color, lw=LW)
-        # Short x-labels, rotated ticks to prevent crowding
         ax.set_xlabel(xlabel, fontsize=FL-0.5, labelpad=1)
         ax.tick_params(axis='x', labelsize=FK-0.5, rotation=30)
         ax.set_ylim(0, max_altitude_km)
 
-        # y-axis label and tick labels: ONLY on the first (leftmost) panel
         if i == 0:
             ax.set_ylabel("Altitude (km)", fontsize=FL, labelpad=2)
         else:
-            # Hide y-axis completely on panels 1 and 2
             ax.set_ylabel("")
             ax.yaxis.set_visible(False)
 
-        # Scale height dotted lines — no text labels to avoid clipping
         for mult in [1, 2, 3]:
             h = H_km * mult
             if 0 < h < max_altitude_km:
                 ax.axhline(h, color="#cccccc", lw=0.5, ls=":", zorder=0)
 
-        # Tight x limits
         ax.set_xlim(left=0)
         xmax = d.max()
         ax.set_xlim(0, xmax * 1.08)
 
-    # Title on middle panel only
     axes[1].set_title(planet.name, fontsize=FT, fontweight="bold", pad=4)
 
-    # Surface summary as a single clean line inside the left axes
     axes[0].text(0.97, 0.97,
                  f"P₀={planet.atmosphere.surface_pressure:.3g} Pa\n"
                  f"T₀={planet.atmosphere.surface_temp:.0f} K\n"
@@ -576,7 +555,6 @@ def plot_planet_comparison(planets, figsize=(7.0, 3.2)):
 
 # =============================================================================
 # Phase 2 — Interplanetary transfer visualisations
-# Style: white background, Wong palette, clean lines, no decorative elements
 # =============================================================================
 
 def plot_heliocentric_transfer(
@@ -619,7 +597,6 @@ def plot_heliocentric_transfer(
     y_au   = traj[:, 1] / AU_m
     speeds = np.linalg.norm(traj[:, 3:6], axis=1)
 
-    # Planet orbits — thin, understated
     theta = np.linspace(0, 2*np.pi, 600)
     r_dep = departure_radius_m / AU_m
     r_arr = arrival_radius_m   / AU_m
@@ -637,7 +614,6 @@ def plot_heliocentric_transfer(
     ax.plot(r_arr*np.cos(theta), r_arr*np.sin(theta),
             color=W_RED,  lw=0.9, ls="-", alpha=0.4, zorder=2)
 
-    # Transfer arc — coloured by speed, tight linewidth
     points = np.array([x_au, y_au]).T.reshape(-1, 1, 2)
     segs   = np.concatenate([points[:-1], points[1:]], axis=1)
     norm   = mcolors.Normalize(vmin=speeds.min(), vmax=speeds.max())
@@ -646,7 +622,6 @@ def plot_heliocentric_transfer(
     lc.set_array(speeds[:-1])
     ax.add_collection(lc)
 
-    # Colorbar — compact, right side
     sm = plt.cm.ScalarMappable(cmap="plasma", norm=norm)
     sm.set_array([])
     cbar = ax.get_figure().colorbar(sm, ax=ax, shrink=0.50,
@@ -654,25 +629,21 @@ def plot_heliocentric_transfer(
     cbar.set_label("Speed (m/s)", fontsize=FA)
     cbar.ax.tick_params(labelsize=FA-1)
 
-    # Planet dots — filled circles, no outline clutter
     dep_xy = traj[0, :2] / AU_m
     arr_xy = traj[-1,:2] / AU_m
     ax.plot(*dep_xy, "o", color=W_BLUE, ms=7, zorder=6, clip_on=False)
     ax.plot(*arr_xy, "o", color=W_RED,  ms=7, zorder=6, clip_on=False)
 
-    # Labels — simple text, no boxes
     off = 0.055
     ax.text(dep_xy[0]+off, dep_xy[1]+off, departure_name,
             fontsize=FA, color=W_BLUE, fontweight="bold")
     ax.text(arr_xy[0]+off, arr_xy[1]+off, arrival_name,
             fontsize=FA, color=W_RED,  fontweight="bold")
 
-    # Sun — small filled circle, not a symbol
     ax.plot(0, 0, "o", color=W_ORANGE, ms=8, zorder=5,
             markeredgecolor=W_BLACK, markeredgewidth=0.4)
     ax.text(0.04, 0.04, star_name, fontsize=FA, color=W_ORANGE)
 
-    # Direction-of-flight tick on arc midpoint
     mid = len(traj)//2
     mp  = traj[mid, :2] / AU_m
     mv  = traj[mid, 3:5]
@@ -682,7 +653,6 @@ def plot_heliocentric_transfer(
                 arrowprops=dict(arrowstyle="-|>", color="#888888",
                                 lw=0.9, mutation_scale=8))
 
-    # Velocity arrows at departure and arrival (small, clean)
     if show_velocity_arrows:
         for pos, vel, col in [(dep_xy, traj[0,3:5], W_BLUE),
                                (arr_xy, traj[-1,3:5], W_RED)]:
@@ -693,7 +663,6 @@ def plot_heliocentric_transfer(
                         arrowprops=dict(arrowstyle="-|>", color=col,
                                         lw=1.0, mutation_scale=7))
 
-    # Orbit legend — line patches only
     from matplotlib.lines import Line2D
     handles = [
         Line2D([0],[0], color=W_BLUE, lw=1.2, label=f"{departure_name} orbit"),
@@ -769,16 +738,13 @@ def plot_porkchop(porkchop_data,
     if contour_levels is None:
         contour_levels = np.linspace(vmin, vmax, 18)
 
-    # Filled contours — smooth, no gaps
     cf = ax.contourf(DEP, ARR, data,
                       levels=contour_levels, cmap=colormap,
                       extend="max", alpha=0.88)
-    # Thin white contour lines for readability
     ax.contour(DEP, ARR, data,
                levels=contour_levels[1::2],
                colors="white", linewidths=0.5, alpha=0.5)
 
-    # ToF contour overlay
     if show_tof_contours and quantity != "tof":
         tof_d = np.where(pc.valid, pc.tof, np.nan)
         if not np.all(np.isnan(tof_d)):
@@ -792,12 +758,10 @@ def plot_porkchop(porkchop_data,
             ax.clabel(ct, inline=True, fontsize=FA-1.5,
                        fmt="%g d", inline_spacing=2)
 
-    # Colorbar
     cbar = ax.get_figure().colorbar(cf, ax=ax, shrink=0.88, pad=0.02, aspect=28)
     cbar.set_label(label, fontsize=FL)
     cbar.ax.tick_params(labelsize=FK)
 
-    # Best window — plain marker, no emoji
     if best_window is not None:
         ax.plot(best_window.departure_day, best_window.arrival_day,
                 "o", ms=7, color=W_BLACK, markerfacecolor=W_YELLOW,
@@ -806,7 +770,6 @@ def plot_porkchop(porkchop_data,
                 f"C3 = {best_window.c3_km2_s2:.1f}",
                 fontsize=FA, color=W_BLACK)
 
-    # Agent choice — circle marker
     if agent_choice is not None:
         di, ai = agent_choice
         if 0 <= di < len(dep) and 0 <= ai < len(arr):
@@ -861,17 +824,14 @@ def plot_soi_approach(approach_trajectory,
 
     # Hyperbola parameters
     r_peri = planet.radius + periapsis_alt_km * 1e3
-    a_hyp  = -mu_planet / v_inf_m_s**2      # semi-major axis (negative)
-    e_hyp  = 1.0 + r_peri / abs(a_hyp)      # eccentricity (>1)
-    p_hyp  = abs(a_hyp) * (e_hyp**2 - 1)   # semi-latus rectum
+    a_hyp  = -mu_planet / v_inf_m_s**2      
+    e_hyp  = 1.0 + r_peri / abs(a_hyp)      
+    p_hyp  = abs(a_hyp) * (e_hyp**2 - 1)   
 
-    # Clip the trajectory at 50x planet radius — this is where the
-    # hyperbolic bend is clearly visible, even for low-gravity planets.
     r_clip = 50.0 * planet.radius
     nu_clip_cos = max(-1.0, min(1.0, (p_hyp / r_clip - 1.0) / e_hyp))
     nu_clip = _math.acos(nu_clip_cos) if abs(nu_clip_cos) < 1 else 1.2
 
-    # Generate trajectory: from -nu_clip (approach) to +0.4 rad past periapsis
     nu_vals = np.linspace(-nu_clip, min(nu_clip * 0.6, 0.8), 400)
     xs_km, ys_km, spds = [], [], []
     for nu in nu_vals:
@@ -908,7 +868,6 @@ def plot_soi_approach(approach_trajectory,
                 color=W_GREEN, lw=1.0, ls=":", zorder=3,
                 label=f"Orbit  ({target_alt_km:.0f} km)")
 
-    # Approach arc coloured by speed
     points = np.array([xs_km, ys_km]).T.reshape(-1, 1, 2)
     segs   = np.concatenate([points[:-1], points[1:]], axis=1)
     norm   = mcolors.Normalize(vmin=spds.min(), vmax=spds.max())
@@ -917,14 +876,12 @@ def plot_soi_approach(approach_trajectory,
     lc.set_array(spds[:-1])
     ax.add_collection(lc)
 
-    # Colorbar
     sm = plt.cm.ScalarMappable(cmap="plasma", norm=norm)
     sm.set_array([])
     cbar = ax.get_figure().colorbar(sm, ax=ax, shrink=0.55, pad=0.02, aspect=22)
     cbar.set_label("Speed  (m/s)", fontsize=FA)
     cbar.ax.tick_params(labelsize=FA - 1)
 
-    # Periapsis / capture burn marker
     peri_km = r_peri / 1e3
     ax.plot(peri_km, 0, "v", ms=7, color=W_GREEN,
             markeredgecolor=W_BLACK, markeredgewidth=0.5, zorder=8)
@@ -940,7 +897,6 @@ def plot_soi_approach(approach_trajectory,
             bbox=dict(boxstyle="round,pad=0.25", fc="white",
                       ec="#CCCCCC", lw=0.6, alpha=0.9))
 
-    # Axis limits — centred on planet, padded by clip radius
     pad    = r_clip / 1e3 * 1.15
     x_lo   = xs_km.min() - pad * 0.05
     x_hi   = xs_km.max() + pad * 0.15
@@ -1020,8 +976,6 @@ def plot_transfer_dashboard(
     plot_porkchop(porkchop_data, ax=ax_c, quantity="vinf_arr",
                    show_tof_contours=True, max_vinf_arr=7)
 
-    # ── Panel (d): Mission ΔV breakdown ──────────────────────────────────────
-    # Split panel (d) into two side-by-side sub-axes using a nested gridspec
     G_si = 6.674e-11
     try:
         from core.soi import HyperbolicDeparture, HyperbolicArrival
@@ -1038,7 +992,7 @@ def plot_transfer_dashboard(
         arr_obj = HyperbolicArrival(vinf_arr, 300_000,
                                      arrival_planet.radius, mu_arr,
                                      target_alt_m=300_000)
-        sk_dv = 50.0   # station-keeping, 5 yr estimate
+        sk_dv = 50.0   
 
         dv_tli   = dep_obj.delta_v_m_s
         dv_cap   = arr_obj.dv_capture_m_s
@@ -1055,7 +1009,6 @@ def plot_transfer_dashboard(
             dv_cap_curve.append(a.dv_capture_m_s)
         dv_cap_curve = np.array(dv_cap_curve)
 
-        # Nested gridspec inside gs[1,1]
         gs_d = gridspec.GridSpecFromSubplotSpec(
             1, 2, subplot_spec=gs[1, 1],
             wspace=0.45, hspace=0)
@@ -1063,7 +1016,6 @@ def plot_transfer_dashboard(
         ax_d2 = fig.add_subplot(gs_d[0, 1])
         _ax(ax_d1); _ax(ax_d2)
 
-        # Left: stacked horizontal bar — 3 segments (TLI / MOI capture / station-keeping)
         full_labels = ["TLI", "MOI\ncapture", "Station-\nkeeping"]
         values = [dv_tli, dv_cap, dv_sk]
         colors = [W_BLUE, W_RED, W_ORANGE]
@@ -1081,7 +1033,6 @@ def plot_transfer_dashboard(
                            fontsize=FA - 1.5, color="white", fontweight="bold")
             left += v
 
-        # Draw a legend below the bar for the tiny SK segment
         ax_d1.text(dv_total / 1000 * 0.5, -0.40,
                    f"Station-keeping (5 yr): {dv_sk:.0f} m/s",
                    ha="center", va="center",
@@ -1096,7 +1047,6 @@ def plot_transfer_dashboard(
             f"Mission ΔV  —  total {dv_total/1000:.2f} km/s",
             fontsize=FT, fontweight="bold", pad=4)
 
-        # Right: capture ΔV vs v∞ arrival
         ax_d2.plot(vinf_range, dv_cap_curve / 1000,
                    color=W_RED, lw=1.6)
         ax_d2.axvline(vinf_arr / 1e3, color=W_ORANGE,
@@ -1115,7 +1065,6 @@ def plot_transfer_dashboard(
                          fontsize=FT, fontweight="bold", pad=4)
 
     except Exception:
-        # Fallback to plain text if soi module unavailable
         ax_d = fig.add_subplot(gs[1, 1])
         _ax(ax_d); ax_d.axis("off")
         if best_window:
@@ -1257,7 +1206,6 @@ def plot_habitability_distribution(population, ax=None, figsize=(6.5, 4.5)):
     bins = np.linspace(0, 1, 26)
     counts, edges = np.histogram(scores, bins=bins)
 
-    # Colour bars by grade thresholds
     grade_colors = {
         "A": W_GREEN, "B": W_BLUE, "C": W_ORANGE,
         "D": W_RED,   "F": "#888888",
@@ -1381,7 +1329,6 @@ def plot_population_dashboard(population, output_dir=".", filename="population_d
     plot_habitability_distribution(population, ax=fig.add_subplot(gs[0, 1]))
     plot_correlation_heatmap(population, ax=fig.add_subplot(gs[1, 0]))
 
-    # Panel (d): RL training context
     ax_d = fig.add_subplot(gs[1, 1])
     _ax(ax_d)
     ax_d.axis("off")
@@ -1415,7 +1362,6 @@ def plot_population_dashboard(population, output_dir=".", filename="population_d
         f"  Transit ppm (median): {stats['transit_ppm_median']:.0f}",
     ]
 
-    # Composition breakdown
     comp_counts = {}
     for r in population.records:
         comp_counts[r.composition] = comp_counts.get(r.composition, 0) + 1

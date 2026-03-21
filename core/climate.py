@@ -1,10 +1,5 @@
 """
 climate.py — 1D Energy Balance Model (EBM) with climate feedbacks.
-
-Closes the biggest gap in the habitability assessment: the current model
-scores temperature but doesn't know that a planet can tip into permanent
-climate states. This module finds those tipping points.
-
 Physics implemented
 -------------------
 1. Ice-albedo feedback (Budyko-Sellers EBM)
@@ -118,7 +113,6 @@ def ice_covered_fraction(T_global_K: float,
         return 1.0
     if T_global_K >= T_melt:
         return 0.0
-    # Smooth sigmoid between freeze and melt
     x = (T_global_K - T_mid) / max(T_half, 1.0)
     return 0.5 * (1.0 - math.tanh(2.0 * x))
 
@@ -151,7 +145,6 @@ def co2_feedback_albedo_correction(co2_ppm: float,
     """
     if co2_ppm <= 0 or reference_ppm <= 0:
         return 0.0
-    # ~0.003 albedo change per doubling of CO₂ (observational estimate)
     return -0.003 * math.log2(co2_ppm / reference_ppm)
 
 
@@ -189,12 +182,10 @@ def olr_with_greenhouse(T_surface_K: float,
     """
     if T_surface_K <= 0:
         return 0.0
-    # Effective emission temperature from energy balance
     T_eff    = (T_surface_K**4 - (greenhouse_dT_K / 0.26 * T_surface_K**3
                  if greenhouse_dT_K > 0 else 0)) ** 0.25
     T_eff    = max(T_eff, T_surface_K * 0.5)
     olr_base = olr_budyko(T_surface_K)
-    # Reduce OLR by greenhouse optical depth
     tau = 1.0 - (T_eff / T_surface_K) ** 4
     tau = max(0.0, min(tau, 0.95))
     return olr_base * (1.0 - tau)
@@ -251,7 +242,6 @@ def carbonate_silicate_co2_ppm(T_surface_K: float,
     delta_T = T_surface_K - reference_T
     ppm = reference_ppm * math.exp(-sensitivity * delta_T / reference_T * 10)
     # Floor: 150 ppm minimum (C3 photosynthesis limit; abiotic floor ~200 ppm)
-    # This prevents the thermostat from driving CO2 so low it destabilises the loop
     return max(150.0, min(ppm, 100_000.0))
 
 
@@ -440,10 +430,6 @@ class EnergyBalanceModel:
         dT_co2 = co2_greenhouse_warming_K(co2_ppm)
 
         if self.wv:
-            # Water vapour amplifier (Clausius-Clapeyron driven).
-            # Calibrated so Earth (T~285 K, CO2=15 K) gives total GH = 33 K:
-            #   amp(285 K) = 33/15 = 2.20 ✓
-            #
             # Physical range:
             #   220 K: very cold/dry atmosphere, WV negligible → amp ≈ 1.0
             #   285 K: Earth → amp = 2.2
@@ -486,8 +472,6 @@ class EnergyBalanceModel:
         T_eq = self._equilibrium_temperature(S, self.base_albedo)
 
         # ── Warm branch (starts from habitable initial guess) ──────────────
-        # Warm branch must start above the ice-melt threshold to find the warm
-        # equilibrium. Starting below T_MELT means full ice cover → can't escape.
         T0_warm = initial_T_K if initial_T_K else max(T_eq + 30, T_MELT + 15.0)
         T_warm  = self._iterate(S, T0_warm, max_iterations, tolerance_K)
 
@@ -617,7 +601,6 @@ class EnergyBalanceModel:
         if total == 0:
             return 280.0
         co2_frac = comp.get("CO2", 0.0) / total
-        # Convert: mole fraction × surface pressure → partial pressure → ppm
         P_co2_Pa = co2_frac * self.planet.atmosphere.surface_pressure
         return P_co2_Pa / 0.101325   # 1 atm = 101325 Pa; 1 ppm = 0.101325 Pa
 
@@ -746,9 +729,8 @@ def climate_habitability_score(planet, star,
             note  = (f"Warm habitable but bistable at {d_AU:.2f} AU — "
                      f"snowball state also possible")
         else:
-            # How far from tipping points?
-            margin_warm = result.T_surface_K - T_FREEZE    # K above freezing
-            margin_hot  = T_RUNAWAY_ONSET - result.T_surface_K   # K below runaway
+            margin_warm = result.T_surface_K - T_FREEZE    
+            margin_hot  = T_RUNAWAY_ONSET - result.T_surface_K   
             margin_frac = min(margin_warm, margin_hot) / 60.0
             score = min(1.0, 0.7 + 0.3 * margin_frac)
             note  = (f"Warm habitable, T={result.T_surface_K:.0f} K, "

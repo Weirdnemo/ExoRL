@@ -244,7 +244,6 @@ def compute_temperature_map(insolation: InsolationMap,
 
     # For very low thermal inertia: temperature tracks insolation closely
     # For high thermal inertia: temperature converges to the diurnal mean
-    # We model this as a weighted blend:
     T_rad = np.where(
         absorbed > 0,
         (absorbed / (emissivity * SIGMA_SB)) ** 0.25,

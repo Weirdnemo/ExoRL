@@ -1,17 +1,12 @@
 """
 atmosphere_science.py — Multi-layer atmosphere model with physical chemistry.
 
-Replaces the single exponential AtmosphereConfig with a layered model that:
   - Tracks gas composition as mole fractions
   - Derives scale height from composition (H = RT/Mg) instead of hand-setting it
   - Computes a proper piecewise temperature profile (troposphere/stratosphere/etc.)
   - Evaluates Jeans escape timescales per species
   - Estimates greenhouse warming from CO₂, CH₄, H₂O concentrations
   - Produces surface temperature from stellar flux + greenhouse (not hand-set)
-
-Backward compatible: the existing AtmosphereConfig is still used by the RL
-environment. This module is an *add-on* that runs on top of it when scientific
-analysis is requested.
 
 All SI units unless noted.
 
@@ -65,7 +60,6 @@ GAMMA = {
 
 # ── Standard compositions for each AtmosphereComposition enum ────────────────
 # Mole fractions must sum to 1.0 (minor species can make the sum slightly > 1
-# due to rounding — they are renormalised internally)
 STANDARD_COMPOSITIONS = {
     "EARTH_LIKE": {
         "N2":  0.7808,
@@ -199,7 +193,6 @@ class MultiLayerAtmosphere:
     planet_radius_m: float
     planet_mass_kg: float
 
-    # Cached layer base pressures (computed lazily)
     _base_pressures: list[float] = field(default_factory=list, repr=False)
 
     def _gravity_at(self, altitude_m: float) -> float:
@@ -215,7 +208,6 @@ class MultiLayerAtmosphere:
         pressures = [self.surface_pressure_Pa]
         P = self.surface_pressure_Pa
         for layer in self.layers[:-1]:
-            # Integrate from layer base to top using mean conditions
             dz   = layer.top_altitude_m - layer.base_altitude_m
             T_mid = layer.temperature_at(
                 (layer.base_altitude_m + layer.top_altitude_m) / 2
@@ -250,7 +242,6 @@ class MultiLayerAtmosphere:
         self._ensure_pressures()
         layer, idx = self._layer_at(altitude_m)
         P_base = self._base_pressures[idx]
-        # Integrate within this layer
         dz   = altitude_m - layer.base_altitude_m
         T_mid = layer.temperature_at(layer.base_altitude_m + dz / 2)
         g_mid = self._gravity_at(layer.base_altitude_m + dz / 2)
@@ -488,7 +479,6 @@ class JeansEscape:
         """
         lam = JeansEscape.lambda_parameter(species, escape_velocity_m_s,
                                             exosphere_temperature_K)
-        # Rough rule: λ > 20 → stable for billions of years
         return lam > 20
 
     @staticmethod
@@ -722,8 +712,6 @@ class GreenhouseModel:
         """
         T = equilibrium_temperature_K   # initial guess
         P_CO2 = composition.get("CO2", 0.0) * surface_pressure_Pa
-        # Runaway ceiling: Venus-like P_CO2 > 1e5 Pa → cap at 800 K
-        # This prevents the iterative amplifier from diverging
         T_cap = 800.0 if P_CO2 > 1e5 else 1500.0
 
         for _ in range(max_iterations):
@@ -732,7 +720,6 @@ class GreenhouseModel:
             T_new = min(T_new, T_cap)
             if abs(T_new - T) < tolerance_K:
                 return T_new
-            # Strong damping — prevents runaway of the iteration itself
             T = 0.75 * T + 0.25 * T_new
         return min(T, T_cap)
 
@@ -791,7 +778,7 @@ def analyse_atmosphere(planet, star=None,
             planet.orbital_distance_m, bond_albedo
         )
     else:
-        T_eq = planet.atmosphere.surface_temp * 0.85   # rough approximation
+        T_eq = planet.atmosphere.surface_temp * 0.85   
 
     # Greenhouse
     P_srf = planet.atmosphere.surface_pressure

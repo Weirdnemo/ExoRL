@@ -1,9 +1,6 @@
 """
 interior.py — Layered planetary interior model.
 
-Replaces the hand-set MagneticFieldStrength enum and OblatenessConfig.J2
-with values physically derived from internal structure.
-
 Physical chain:
   layer densities + radii
       → bulk mass ✓ (self-consistent with planet.mass)
@@ -36,8 +33,7 @@ k_B         = 1.380_649e-23  # J K⁻¹  (Boltzmann)
 SIGMA_SB    = 5.670_374e-8   # W m⁻² K⁻⁴  (Stefan-Boltzmann)
 
 # ── Radiogenic heat production rates (W/kg of element) ───────────────────────
-# Present-day values; scale by exp(-λt) for early planet
-HEAT_U238   = 9.46e-5    # ²³⁸U   — dominant in Earth's mantle
+HEAT_U238   = 9.46e-5    # ²³⁸U
 HEAT_U235   = 5.69e-4    # ²³⁵U
 HEAT_TH232  = 2.64e-5    # ²³²Th
 HEAT_K40    = 2.92e-5    # ⁴⁰K
@@ -103,7 +99,7 @@ class InteriorLayer:
     outer_radius_frac: float          # 0 < f ≤ 1.0
     density: float                    # kg/m³
     material: str = "silicate_mix"
-    heat_production: Optional[float] = None   # W/kg; None → BSE default
+    heat_production: Optional[float] = None
     is_liquid: bool = False
     is_conducting: bool = False
 

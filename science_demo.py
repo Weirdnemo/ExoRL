@@ -1,14 +1,6 @@
 """
 science_demo.py  —  Planet-RL Science Toolkit: Full Feature Demo
 =================================================================
-Exercises every science module added in Steps 1-5 and produces
-10 publication-quality figures saved to ./science_figures/
-
-Run from Planet-RL root:
-    python science_demo.py
-
-Dependencies: numpy, matplotlib  (gymnasium NOT required)
-
 Figures produced
 ----------------
 fig01_solar_system_comparison.png  — 5 presets cross-sections + interior pie charts
@@ -763,7 +755,6 @@ ax.legend(fontsize=FG-1, framealpha=0.9); ax.tick_params(labelsize=FK)
 
 # (d) Subsurface ocean heating threshold — needed eccentricity
 ax = axes9[1, 1]; _ax(ax)
-# For a moon around each solar system body, what eccentricity gives Europa-like heating?
 planet_objs = [earth, mars]
 R_moon = 1.5e6; M_moon = 1e22  # generic moon
 target_flux = 0.05  # W/m²  (Europa threshold for liquid water)

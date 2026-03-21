@@ -70,7 +70,6 @@ class J2Analysis:
     def _validate(planet) -> tuple[float, float, float]:
         """Return (mu, J2, R_p) from planet; raise if J2 not available."""
         mu = G * planet.mass
-        # Prefer derived J2 if interior model is present
         if hasattr(planet, "derived_J2"):
             J2 = planet.derived_J2()
         elif planet.oblateness.enabled:

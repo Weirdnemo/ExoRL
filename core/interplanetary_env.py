@@ -359,7 +359,7 @@ class InterplanetaryEnv(gym.Env if GYM_AVAILABLE else object):
         self._fuel_init         = self.wet_mass - self.dry_mass
         self._vinf_arr_actual   = 0.0
         self._total_dv_used     = 0.0
-        self._tof_s             = self.min_tof_days * 86400  # updated at commit
+        self._tof_s             = self.min_tof_days * 86400
 
         obs  = self._get_obs()
         info = self._make_info()
@@ -390,7 +390,6 @@ class InterplanetaryEnv(gym.Env if GYM_AVAILABLE else object):
         if float(action[2]) > 0.0:
             return self._commit_window()
 
-        # Not yet committed — give a small shaping reward based on current choice
         cost = self._space.cost(self._dep_idx, self._arr_idx)
         if cost['valid']:
             r = -0.01 * (cost['c3'] / 30.0 + cost['vinf_arr'] / 8.0)
@@ -406,7 +405,6 @@ class InterplanetaryEnv(gym.Env if GYM_AVAILABLE else object):
         cost = self._space.cost(self._dep_idx, self._arr_idx)
 
         if not cost['valid']:
-            # Bad window — penalise and force to best available
             bi, bj = self._space.best_action()
             self._dep_idx = bi
             self._arr_idx = bj
@@ -428,7 +426,6 @@ class InterplanetaryEnv(gym.Env if GYM_AVAILABLE else object):
         v1s, v2s = solver.solve(r1v, r2v, self._tof_s)
 
         if v1s is None:
-            # Lambert failed — use Hohmann approximation
             v_dep = math.sqrt(MU_SUN / cfg.departure_radius_m)
             v1s   = v1p + np.array([0.0, v_dep * 0.1, 0.0])
             v2s   = v2p
@@ -559,7 +556,6 @@ class InterplanetaryEnv(gym.Env if GYM_AVAILABLE else object):
         r_peri = cfg.arrival_planet.radius + 300_000.0
 
         # Use the actual planetocentric state from the heliocentric trajectory
-        # (this is the most physically accurate initialisation)
         self._sc_planet = SpacecraftState(
             x=float(r_planet[0]), y=float(r_planet[1]), z=float(r_planet[2]),
             vx=float(v_planet[0]), vy=float(v_planet[1]), vz=float(v_planet[2]),

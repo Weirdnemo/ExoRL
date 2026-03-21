@@ -197,7 +197,7 @@ def geometric_transit_probability(star_radius_m: float,
     With eccentricity: high-eccentricity orbits have enhanced probability
     during the close approach phase.
     """
-    r_eff = star_radius_m  # approximate: ignore R_p for geometric probability
+    r_eff = star_radius_m  
     ecc_factor = (1.0 + eccentricity) / (1.0 - eccentricity**2)
     return (r_eff / orbital_distance_m) * ecc_factor
 
@@ -504,7 +504,7 @@ def transmission_spectrum(planet, star=None,
     for molecule, wavelengths in SPECTRAL_FEATURES.items():
         frac = composition.get(molecule, 0.0)
         if frac < 1e-7:
-            continue   # trace amount — undetectable
+            continue   
         # Feature strength scales roughly as sqrt of mole fraction
         strength = depth_per_feature * _math.sqrt(frac)
         bio_note = BIOSIGNATURE_POTENTIAL.get(molecule, "")

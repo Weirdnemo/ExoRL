@@ -284,16 +284,13 @@ def plan_aerobraking(planet,
             rho = planet.atmosphere.density_at_altitude(periapsis_altitude_km * 1e3)
             continue
 
-        # New apoapsis after this pass
         # Energy change: ΔE = -v_peri × ΔV_drag
         a_new  = a / (1 + 2 * a * rho * math.sqrt(G * planet.mass) /
                       (B * math.sqrt(a)) * 0.5)  # simplified
-        # More direct: new apoapsis from energy balance
         delta_E = -v_peri * dv_per_pass   # J/kg (negative = loss)
         E_old   = -mu / (2 * a)
         E_new   = E_old + delta_E
         if E_new >= 0:
-            # Hyperbolic — shouldn't happen but guard
             break
         a_new   = -mu / (2 * E_new)
         apo_new_km = (a_new * (1 + e) - R) / 1e3  # approx (e changes slightly)
@@ -677,7 +674,6 @@ def build_mission_dv_budget(planet,
                    ins["dv_circularise_m_s"],
                    f"Circularise at {target_altitude_km:.0f} km altitude")
 
-    # Plane change (if needed — typically 0 if properly designed)
     budget.add("Plane change contingency", 20.0, "Inclination trim")
 
     # Station-keeping

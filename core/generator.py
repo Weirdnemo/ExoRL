@@ -247,7 +247,6 @@ class PlanetGenerator:
 
         # ── Oblateness ────────────────────────────────────────────────────────
         if oblateness_enabled:
-            # Fast rotators are more oblate
             period_abs = abs(period)
             J2 = rng.uniform(1e-4, 2e-3) * (86400 / max(period_abs, 3600))**0.5
             obl = OblatenessConfig(

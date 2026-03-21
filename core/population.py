@@ -172,7 +172,7 @@ class PlanetPopulation:
 
     def __init__(self, records: list[PlanetRecord]):
         self.records  = records
-        self._arr: Optional[dict] = None   # cached numpy arrays
+        self._arr: Optional[dict] = None
 
     def __len__(self):
         return len(self.records)
@@ -501,7 +501,7 @@ class PlanetPopulation:
                 "transit_ppm", "rv_K", "dist_au"]
         mat = np.column_stack([a[k] for k in keys])
 
-        # Replace NaN/inf with column medians
+        
         for j in range(mat.shape[1]):
             col = mat[:, j]
             bad = ~np.isfinite(col)

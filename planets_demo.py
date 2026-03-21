@@ -47,7 +47,6 @@ plt.close(fig1a)
 
 # ─────────────────────────────────────────────────────
 # FIG 1b  — Preset atmosphere profiles (5 planet × 3 panel)
-#   Each row = 1 planet, 3 panels side by side
 # ─────────────────────────────────────────────────────
 print("[2/8] Preset atmosphere profiles ...")
 
@@ -115,8 +114,6 @@ plt.close(fig2b)
 
 # ─────────────────────────────────────────────────────
 # FIG 3  — Atmosphere zoo (6 compositions, 2×3 grid of triplets)
-#   Each cell in the grid = 3 atmosphere panels
-#   Grid: 2 rows × 3 planet-columns, each planet-column = 3 axes
 # ─────────────────────────────────────────────────────
 print("[5/8] Atmosphere zoo ...")
 
@@ -138,7 +135,6 @@ atm_planets = [
     for comp, label in comp_info
 ]
 
-# Layout: 6 rows × 3 cols (one row per planet, 3 panels per row)
 fig3, axes3 = plt.subplots(6, 3, figsize=(5.5, 10.0),
     gridspec_kw=dict(hspace=0.65, wspace=0.12,
                      left=0.12, right=0.97,

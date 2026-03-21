@@ -85,7 +85,7 @@ class PorkchopData:
     c3:                 np.ndarray   # (n_dep, n_arr)
     vinf_arr:           np.ndarray
     tof:                np.ndarray
-    valid:              np.ndarray   # bool mask
+    valid:              np.ndarray   
     departure_planet:   str = "Departure"
     arrival_planet:     str = "Arrival"
     departure_radius_m: float = AU
