@@ -18,7 +18,7 @@ from visualization import (
 )
 from visualization.visualizer import _ax
 
-OUT = "figures"
+OUT = "planet_figures"
 os.makedirs(OUT, exist_ok=True)
 apply_journal_style()
 
@@ -35,7 +35,7 @@ presets = [PRESETS[k]() for k in PRESETS]
 
 fig1a, axes1a = plt.subplots(1, 5, figsize=(7.08, 2.8),
     gridspec_kw=dict(wspace=0.05, left=0.01, right=0.99,
-                     top=0.88, bottom=0.04))
+                     top=0.83, bottom=0.04))
 fig1a.patch.set_facecolor("white")
 ref1a = max(p.radius for p in presets)
 for ax, p in zip(axes1a, presets):
@@ -54,7 +54,7 @@ print("[2/8] Preset atmosphere profiles ...")
 fig1b, axes1b = plt.subplots(5, 3, figsize=(5.5, 8.5),
     gridspec_kw=dict(hspace=0.65, wspace=0.12,
                      left=0.12, right=0.97,
-                     top=0.95, bottom=0.06))
+                     top=0.90, bottom=0.06))
 fig1b.patch.set_facecolor("white")
 
 for row, planet in enumerate(presets):
@@ -83,7 +83,7 @@ for p in randoms:
 
 fig2a, axes2a = plt.subplots(1, 6, figsize=(7.08, 2.8),
     gridspec_kw=dict(wspace=0.05, left=0.01, right=0.99,
-                     top=0.88, bottom=0.04))
+                     top=0.83, bottom=0.04))
 fig2a.patch.set_facecolor("white")
 ref2a = max(p.radius for p in randoms)
 for ax, p in zip(axes2a, randoms):
@@ -101,7 +101,7 @@ print("[4/8] Random atmosphere profiles ...")
 fig2b, axes2b = plt.subplots(6, 3, figsize=(5.5, 10.0),
     gridspec_kw=dict(hspace=0.65, wspace=0.12,
                      left=0.12, right=0.97,
-                     top=0.96, bottom=0.05))
+                     top=0.91, bottom=0.05))
 fig2b.patch.set_facecolor("white")
 
 for row, planet in enumerate(randoms):
@@ -132,6 +132,7 @@ gen_atm = PlanetGenerator(seed=7)
 atm_planets = [
     gen_atm.generate(name=label, atmosphere_enabled=True,
                      atmosphere_composition=comp,
+                     allow_no_atmosphere=False,
                      terrain_enabled=False, magnetic_field_enabled=False,
                      oblateness_enabled=False, moons_enabled=False)
     for comp, label in comp_info
@@ -141,7 +142,7 @@ atm_planets = [
 fig3, axes3 = plt.subplots(6, 3, figsize=(5.5, 10.0),
     gridspec_kw=dict(hspace=0.65, wspace=0.12,
                      left=0.12, right=0.97,
-                     top=0.96, bottom=0.05))
+                     top=0.91, bottom=0.05))
 fig3.patch.set_facecolor("white")
 
 for row, planet in enumerate(atm_planets):
@@ -176,7 +177,7 @@ bare_planets = [
 
 fig4, axes4 = plt.subplots(1, 4, figsize=(7.08, 2.8),
     gridspec_kw=dict(wspace=0.05, left=0.01, right=0.99,
-                     top=0.88, bottom=0.04))
+                     top=0.83, bottom=0.04))
 fig4.patch.set_facecolor("white")
 ref4 = max(p.radius for p in bare_planets)
 for ax, planet in zip(axes4, bare_planets):
@@ -208,7 +209,7 @@ toggle_configs = [
 
 fig5, axes5 = plt.subplots(1, 4, figsize=(7.08, 2.8),
     gridspec_kw=dict(wspace=0.05, left=0.01, right=0.99,
-                     top=0.88, bottom=0.04))
+                     top=0.83, bottom=0.04))
 fig5.patch.set_facecolor("white")
 toggle_planets = []
 for label, kwargs in toggle_configs:

@@ -123,7 +123,7 @@ gs1  = gridspec.GridSpec(2, 5, figure=fig1,
                           height_ratios=[1.8, 1.0],
                           hspace=0.35, wspace=0.10,
                           left=0.02, right=0.98,
-                          top=0.92, bottom=0.08)
+                          top=0.87, bottom=0.08)
 
 ref_r = max(p.radius for p in ALL_PLANETS)
 for i, planet in enumerate(ALL_PLANETS):
@@ -174,7 +174,7 @@ print("[2/10] Interior profiles …")
 fig2, axes2 = plt.subplots(2, 2, figsize=(7.08, 4.8),
                             gridspec_kw=dict(hspace=0.50, wspace=0.40,
                                             left=0.10, right=0.97,
-                                            top=0.91, bottom=0.11))
+                                            top=0.87, bottom=0.11))
 fig2.patch.set_facecolor("white")
 names  = [p.name for p in ALL_PLANETS]
 colors = [WONG[i] for i in range(len(ALL_PLANETS))]
@@ -244,7 +244,7 @@ star_colors = [W_ORANGE, W_YELLOW, "#FFD080", W_RED, "#FF6060", "#FF4040"]
 fig3 = plt.figure(figsize=(7.08, 5.0))
 fig3.patch.set_facecolor("white")
 gs3 = gridspec.GridSpec(1, 2, figure=fig3, wspace=0.40,
-                         left=0.10, right=0.97, top=0.91, bottom=0.12)
+                         left=0.10, right=0.97, top=0.87, bottom=0.12)
 
 # Left: HZ bands as horizontal bars
 ax3a = fig3.add_subplot(gs3[0])
@@ -308,7 +308,7 @@ fig4.patch.set_facecolor("white")
 gs4 = gridspec.GridSpec(2, 3, figure=fig4,
                          hspace=0.55, wspace=0.38,
                          left=0.10, right=0.97,
-                         top=0.92, bottom=0.10)
+                         top=0.87, bottom=0.10)
 
 # Top row: multi-layer atmosphere profiles for Earth, Venus, Titan
 atm_planets = [(earth, "Earth", W_BLUE), (venus, "Venus", W_ORANGE),
@@ -429,10 +429,10 @@ factor_short = ["Stellar\ntype", "Stellar\nage", "HZ\npos.", "Surf.\ntemp",
                 "Liq.\nwater", "Atm.\nretain", "Mag.\nshield",
                 "Tidal\nlock", "Interior", "Size"]
 
-fig5 = plt.figure(figsize=(7.08, 5.2))
+fig5 = plt.figure(figsize=(7.08, 5.6))
 fig5.patch.set_facecolor("white")
-gs5 = gridspec.GridSpec(2, 3, figure=fig5, hspace=0.60, wspace=0.42,
-                         left=0.08, right=0.97, top=0.91, bottom=0.10)
+gs5 = gridspec.GridSpec(2, 3, figure=fig5, hspace=0.70, wspace=0.42,
+                         left=0.08, right=0.97, top=0.83, bottom=0.08)
 
 ha_colors = [W_BLUE, W_RED, W_ORANGE, "#888888", W_PINK, W_GREEN]
 
@@ -479,7 +479,7 @@ T_mars_year  = sun.orbital_period(1.524 * AU)
 fig6, axes6 = plt.subplots(2, 3, figsize=(7.08, 4.8),
                             gridspec_kw=dict(hspace=0.52, wspace=0.42,
                                             left=0.10, right=0.97,
-                                            top=0.91, bottom=0.11))
+                                            top=0.87, bottom=0.11))
 fig6.patch.set_facecolor("white")
 
 # (a) RAAN precession rate vs altitude for 4 inclinations — Earth
@@ -593,7 +593,7 @@ cov   = compute_coverage_map(earth, track, swath_width_km=120,
 fig7, axes7 = plt.subplots(1, 2, figsize=(7.08, 3.4),
                             gridspec_kw=dict(wspace=0.35,
                                             left=0.07, right=0.97,
-                                            top=0.88, bottom=0.14))
+                                            top=0.85, bottom=0.14))
 fig7.patch.set_facecolor("white")
 
 # Ground track (first 3 orbits for clarity)
@@ -653,7 +653,7 @@ S_earth = sun.flux_at_distance(1.0 * AU)
 fig8, axes8 = plt.subplots(2, 3, figsize=(7.08, 4.8),
                             gridspec_kw=dict(hspace=0.45, wspace=0.40,
                                             left=0.08, right=0.97,
-                                            top=0.91, bottom=0.10))
+                                            top=0.87, bottom=0.10))
 fig8.patch.set_facecolor("white")
 
 seasons   = [(0.0, "Northern solstice"), (0.25, "Equinox"), (0.5, "Southern solstice")]
@@ -705,7 +705,7 @@ print("[9/10] Tidal dynamics …")
 fig9, axes9 = plt.subplots(2, 2, figsize=(7.08, 4.8),
                             gridspec_kw=dict(hspace=0.50, wspace=0.40,
                                             left=0.11, right=0.97,
-                                            top=0.91, bottom=0.11))
+                                            top=0.87, bottom=0.11))
 fig9.patch.set_facecolor("white")
 
 # (a) Tidal heating vs orbital distance for Io-like moons around different planets
@@ -791,10 +791,10 @@ plt.close(fig9)
 # ══════════════════════════════════════════════════════════════════════════════
 print("[10/10] Mission design …")
 
-fig10, axes10 = plt.subplots(2, 3, figsize=(7.08, 5.0),
-                              gridspec_kw=dict(hspace=0.55, wspace=0.42,
+fig10, axes10 = plt.subplots(2, 3, figsize=(7.5, 5.2),
+                              gridspec_kw=dict(hspace=0.60, wspace=0.48,
                                               left=0.09, right=0.97,
-                                              top=0.91, bottom=0.10))
+                                              top=0.87, bottom=0.10))
 fig10.patch.set_facecolor("white")
 
 # (a) Orbital insertion ΔV vs arrival v_inf for Earth/Mars/Venus
@@ -879,31 +879,28 @@ ax.set_ylabel("Total insertion ΔV (m/s)", fontsize=FL)
 ax.set_title("(e) Mars insertion vs orbit altitude", fontsize=FT, fontweight="bold", pad=3)
 ax.legend(fontsize=FG, framealpha=0.9); ax.tick_params(labelsize=FK)
 
-# (f) Porkchop-style: C3 vs departure date (simplified — fixed ToF sweeps)
+# (f) Porkchop: C3 vs departure/arrival date using Lambert solver
 ax = axes10[1, 2]; _ax(ax)
-mu_sun   = 6.674e-11 * 1.989e30
-r_earth  = 1.0 * AU
-r_mars   = 1.524 * AU
-T_e = 2 * math.pi * math.sqrt(r_earth**3 / mu_sun)
-T_m = 2 * math.pi * math.sqrt(r_mars**3 / mu_sun)
-
-dep_days = np.linspace(0, 780, 60)   # ~2 Earth years
-arr_days = np.linspace(150, 930, 60)
-pc = porkchop_data(mu_sun, r_earth, r_mars, dep_days, arr_days,
-                    T_e, T_m)
-C3 = pc["C3"]
-C3_masked = np.where((C3 > 0) & (C3 < 60), C3, np.nan)
-im10 = ax.contourf(arr_days, dep_days, C3_masked,
-                   levels=np.linspace(5, 50, 15),
-                   cmap="RdYlGn_r", extend="both")
-ax.contour(arr_days, dep_days, C3_masked,
-           levels=[10, 15, 20, 30], colors="white",
-           linewidths=0.6, alpha=0.7)
+from core.launch_window import PorkchopData as _PC
+_r_e = 1.0   * AU
+_r_m = 1.524 * AU
+_dep = np.linspace(0, 780, 40)
+_arr = np.linspace(150, 930, 40)
+_pc  = _PC.compute(_r_e, _r_m, _dep, _arr,
+                    dep_name="Earth", arr_name="Mars", min_tof_days=60)
+_C3  = np.where(_pc.valid, _pc.c3, np.nan)
+_DEP, _ARR = np.meshgrid(_dep, _arr, indexing="ij")
+im10 = ax.contourf(_DEP, _ARR, _C3,
+                   levels=np.linspace(5, 30, 14),
+                   cmap="RdYlGn_r", extend="max")
+ax.contour(_DEP, _ARR, _C3,
+           levels=[8, 10, 15, 20], colors="white",
+           linewidths=0.5, alpha=0.6)
 cb10 = fig10.colorbar(im10, ax=ax, shrink=0.9, pad=0.03)
-cb10.set_label("C3 (km²/s²)", fontsize=FA); cb10.ax.tick_params(labelsize=FA)
-ax.set_xlabel("Arrival day", fontsize=FL)
-ax.set_ylabel("Departure day", fontsize=FL)
-ax.set_title("(f) Earth→Mars porkchop plot", fontsize=FT, fontweight="bold", pad=3)
+cb10.set_label("C3  (km²/s²)", fontsize=FA); cb10.ax.tick_params(labelsize=FA)
+ax.set_xlabel("Departure day", fontsize=FL)
+ax.set_ylabel("Arrival day", fontsize=FL)
+ax.set_title("(f) Earth→Mars porkchop", fontsize=FT, fontweight="bold", pad=3)
 ax.tick_params(labelsize=FK)
 
 fig10.suptitle("Mission design: insertion ΔV, aerobraking, gravity assists, porkchop",

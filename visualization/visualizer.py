@@ -854,10 +854,26 @@ def plot_soi_approach(approach_trajectory,
             bbox=dict(boxstyle="round,pad=0.25", fc="white",
                       ec="#CCCCCC", lw=0.6, alpha=0.9))
 
-    # Limits — show the approach arc clearly
-    ext = max(np.abs(x_sc).max(), np.abs(y_sc).max()) * 1.12
-    ax.set_xlim(-ext*0.1, ext)
-    ax.set_ylim(-ext*0.6, ext*0.6)
+    # Limits — show the inner region where the hyperbolic arc is clearly visible.
+    # The full SOI is hundreds of Mm but the interesting physics (the curve,
+    # periapsis, and planet) all happen within the inner ~10% of the SOI.
+    # We clip to the inner portion so the arc fills the panel.
+    dists = np.sqrt(x_sc**2 + y_sc**2)
+    inner_mask = dists < dists.max() * 0.15   # inner 15% of trajectory
+    if inner_mask.sum() > 10:
+        # Show the region where the trajectory is actually curving
+        x_inner = x_sc[inner_mask]
+        y_inner = y_sc[inner_mask]
+        pad = max(np.abs(x_inner).max(), np.abs(y_inner).max()) * 0.25
+        x_ext = max(np.abs(x_inner).max() + pad, R_sc * 8)
+        y_ext = max(np.abs(y_inner).max() + pad, R_sc * 8)
+        ax.set_xlim(-x_ext * 0.3, x_ext * 1.1)
+        ax.set_ylim(-y_ext * 1.1, y_ext * 0.5)
+    else:
+        # Fallback: full trajectory extent
+        ext = max(np.abs(x_sc).max(), np.abs(y_sc).max()) * 1.12
+        ax.set_xlim(-ext * 0.1, ext)
+        ax.set_ylim(-ext * 0.6, ext * 0.6)
 
     ax.set_xlabel("x  (Mm)", fontsize=FL)
     ax.set_ylabel("y  (Mm)", fontsize=FL)
