@@ -337,6 +337,76 @@ def plot_atmosphere_profile(planet: Planet, axes=None, max_altitude_km=150):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# ATMOSPHERE SINGLE — single-axis density profile (backwards-compatible helper)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def plot_atmosphere_single(planet: Planet, ax=None, max_altitude_km=150,
+                            quantity="density"):
+    """
+    Draw a single atmosphere profile panel on one axis.
+    Backwards-compatible replacement for the old plot_atmosphere_profile(ax=ax) API.
+
+    Parameters
+    ----------
+    planet            : Planet object
+    ax                : single matplotlib Axes, or None to create a new figure
+    max_altitude_km   : altitude ceiling in km
+    quantity          : "density" | "pressure" | "temperature"
+    """
+    own_fig = ax is None
+    if own_fig:
+        fig, ax = plt.subplots(figsize=(3.0, 3.5))
+        fig.patch.set_facecolor("white")
+
+    _ax(ax)
+
+    if not planet.atmosphere.enabled:
+        ax.text(0.5, 0.5, "No atmosphere",
+                transform=ax.transAxes, ha="center", va="center",
+                fontsize=FL, color="#aaaaaa", style="italic")
+        ax.set_title(planet.name, fontsize=FT, fontweight="bold", pad=3)
+        if own_fig:
+            return ax.get_figure()
+        return ax
+
+    alts    = np.linspace(0, max_altitude_km * 1e3, 400)
+    alts_km = alts / 1e3
+
+    if quantity == "density":
+        vals   = np.array([planet.atmosphere.density_at_altitude(h) for h in alts])
+        xlabel = "Density (kg/m³)"
+        color  = C_DENSITY
+    elif quantity == "pressure":
+        vals   = np.array([planet.atmosphere.pressure_at_altitude(h) / 1e3 for h in alts])
+        xlabel = "Pressure (kPa)"
+        color  = C_PRESSURE
+    else:
+        vals   = np.array([planet.atmosphere.temperature_at_altitude(h) for h in alts])
+        xlabel = "Temp (K)"
+        color  = C_TEMP
+
+    ax.fill_betweenx(alts_km, vals, alpha=0.12, color=color)
+    ax.plot(vals, alts_km, color=color, lw=LW)
+    ax.set_xlim(left=0, right=vals.max() * 1.08)
+    ax.set_ylim(0, max_altitude_km)
+    ax.set_xlabel(xlabel, fontsize=FL - 0.5, labelpad=1)
+    ax.set_ylabel("Altitude (km)", fontsize=FL, labelpad=2)
+    ax.tick_params(labelsize=FK - 0.5)
+
+    H_km = planet.atmosphere.scale_height / 1e3
+    for mult in [1, 2, 3]:
+        h = H_km * mult
+        if 0 < h < max_altitude_km:
+            ax.axhline(h, color="#cccccc", lw=0.5, ls=":", zorder=0)
+
+    ax.set_title(planet.name, fontsize=FT, fontweight="bold", pad=3)
+
+    if own_fig:
+        return ax.get_figure()
+    return ax
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # TRAJECTORY 2D
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -772,62 +842,79 @@ def plot_soi_approach(approach_trajectory,
 ):
     """
     Hyperbolic approach and capture within the planet SOI.
-    White background, consistent with rest of science figures.
+
+    Recomputes the approach arc internally, clipped to 50x planet radius
+    so the gravitational curve is clearly visible regardless of planet size.
+    The external approach_trajectory argument is still accepted for API
+    compatibility but the display is driven by the internal recomputation.
     """
+    import math as _math
     import numpy as np
     import matplotlib.pyplot as plt
     from matplotlib.collections import LineCollection
     import matplotlib.colors as mcolors
     from matplotlib.patches import Circle
 
-    traj = np.asarray(approach_trajectory)
-    # Work in units of planet radii for this panel
-    R_km  = planet.radius / 1e3
-    dists = np.linalg.norm(traj[:, :2], axis=1)
+    G_si = 6.674e-11
+    mu_planet = G_si * planet.mass
+    R_km = planet.radius / 1e3
 
-    # Scale to Mm for readability
-    scale = 1e6   # 1 Mm
-    x_sc = traj[:, 0] / scale
-    y_sc = traj[:, 1] / scale
-    R_sc = planet.radius / scale
-    soi_sc = soi_radius_m / scale
+    # Hyperbola parameters
+    r_peri = planet.radius + periapsis_alt_km * 1e3
+    a_hyp  = -mu_planet / v_inf_m_s**2      # semi-major axis (negative)
+    e_hyp  = 1.0 + r_peri / abs(a_hyp)      # eccentricity (>1)
+    p_hyp  = abs(a_hyp) * (e_hyp**2 - 1)   # semi-latus rectum
+
+    # Clip the trajectory at 50x planet radius — this is where the
+    # hyperbolic bend is clearly visible, even for low-gravity planets.
+    r_clip = 50.0 * planet.radius
+    nu_clip_cos = max(-1.0, min(1.0, (p_hyp / r_clip - 1.0) / e_hyp))
+    nu_clip = _math.acos(nu_clip_cos) if abs(nu_clip_cos) < 1 else 1.2
+
+    # Generate trajectory: from -nu_clip (approach) to +0.4 rad past periapsis
+    nu_vals = np.linspace(-nu_clip, min(nu_clip * 0.6, 0.8), 400)
+    xs_km, ys_km, spds = [], [], []
+    for nu in nu_vals:
+        r_nu = p_hyp / (1 + e_hyp * _math.cos(nu))
+        x = r_nu * _math.cos(nu) / 1e3
+        y = r_nu * _math.sin(nu) / 1e3
+        spd = _math.sqrt(v_inf_m_s**2 + 2 * mu_planet / r_nu)
+        xs_km.append(x); ys_km.append(y); spds.append(spd)
+
+    xs_km = np.array(xs_km)
+    ys_km = np.array(ys_km)
+    spds  = np.array(spds)
 
     standalone = ax is None
     if standalone:
         fig, ax = plt.subplots(figsize=figsize,
-                               gridspec_kw=dict(left=0.12, right=0.93,
+                               gridspec_kw=dict(left=0.13, right=0.93,
                                                 top=0.91, bottom=0.11))
         fig.patch.set_facecolor("white")
     _ax(ax)
     ax.set_aspect("equal")
 
-    # SOI boundary — thin dashed
-    theta = np.linspace(0, 2*np.pi, 500)
-    ax.plot(soi_sc*np.cos(theta), soi_sc*np.sin(theta),
-            color="#AAAAAA", lw=0.8, ls="--", zorder=1,
-            label=f"SOI  ({soi_sc:.0f} Mm)")
-
-    # Planet — filled circle, correct relative size
-    pcirc = plt.Circle((0,0), R_sc, color=W_ORANGE, alpha=0.75, zorder=5)
+    # Planet body
+    pcirc = plt.Circle((0, 0), R_km, color=W_ORANGE, alpha=0.80, zorder=5)
     ax.add_patch(pcirc)
     ax.text(0, 0, planet.name, ha="center", va="center",
             fontsize=FA, color="white", fontweight="bold", zorder=6)
 
-    # Science orbit circle
+    # Science / capture orbit
     if show_capture_orbit:
-        r_tgt = (planet.radius + target_alt_km*1e3) / scale
-        ax.plot(r_tgt*np.cos(theta), r_tgt*np.sin(theta),
+        theta = np.linspace(0, 2 * np.pi, 400)
+        r_tgt_km = (planet.radius + target_alt_km * 1e3) / 1e3
+        ax.plot(r_tgt_km * np.cos(theta), r_tgt_km * np.sin(theta),
                 color=W_GREEN, lw=1.0, ls=":", zorder=3,
-                label=f"Science orbit  ({target_alt_km:.0f} km)")
+                label=f"Orbit  ({target_alt_km:.0f} km)")
 
-    # Approach arc — coloured by speed
-    speeds = np.linalg.norm(traj[:, 3:6], axis=1)
-    points = np.array([x_sc, y_sc]).T.reshape(-1, 1, 2)
+    # Approach arc coloured by speed
+    points = np.array([xs_km, ys_km]).T.reshape(-1, 1, 2)
     segs   = np.concatenate([points[:-1], points[1:]], axis=1)
-    norm   = mcolors.Normalize(vmin=speeds.min(), vmax=speeds.max())
+    norm   = mcolors.Normalize(vmin=spds.min(), vmax=spds.max())
     lc = LineCollection(segs, cmap="plasma", norm=norm,
                         lw=1.8, zorder=4, alpha=0.95)
-    lc.set_array(speeds[:-1])
+    lc.set_array(spds[:-1])
     ax.add_collection(lc)
 
     # Colorbar
@@ -835,53 +922,39 @@ def plot_soi_approach(approach_trajectory,
     sm.set_array([])
     cbar = ax.get_figure().colorbar(sm, ax=ax, shrink=0.55, pad=0.02, aspect=22)
     cbar.set_label("Speed  (m/s)", fontsize=FA)
-    cbar.ax.tick_params(labelsize=FA-1)
+    cbar.ax.tick_params(labelsize=FA - 1)
 
-    # Periapsis marker — clean triangle
-    peri_idx = np.argmin(np.linalg.norm(traj[:, :2], axis=1))
-    px, py = x_sc[peri_idx], y_sc[peri_idx]
-    ax.plot(px, py, "v", ms=7, color=W_GREEN,
+    # Periapsis / capture burn marker
+    peri_km = r_peri / 1e3
+    ax.plot(peri_km, 0, "v", ms=7, color=W_GREEN,
             markeredgecolor=W_BLACK, markeredgewidth=0.5, zorder=8)
-    ax.text(px + R_sc*2, py,
+    ax.text(peri_km + R_km * 0.6, R_km * 0.4,
             f"Capture burn\n{periapsis_alt_km:.0f} km alt",
-            fontsize=FA-0.5, color=W_GREEN, va="center")
+            fontsize=FA - 0.5, color=W_GREEN, va="bottom")
 
-    # Annotation box — white background, thin border
+    # Annotation
     ax.text(0.03, 0.97,
-            r"$v_\infty$" + f" = {v_inf_m_s/1e3:.2f} km/s",
+            r"$v_\infty$" + f" = {v_inf_m_s / 1e3:.2f} km/s",
             transform=ax.transAxes, va="top", ha="left",
             fontsize=FA, color=W_BLACK,
             bbox=dict(boxstyle="round,pad=0.25", fc="white",
                       ec="#CCCCCC", lw=0.6, alpha=0.9))
 
-    # Limits — show the inner region where the hyperbolic arc is clearly visible.
-    # The full SOI is hundreds of Mm but the interesting physics (the curve,
-    # periapsis, and planet) all happen within the inner ~10% of the SOI.
-    # We clip to the inner portion so the arc fills the panel.
-    dists = np.sqrt(x_sc**2 + y_sc**2)
-    inner_mask = dists < dists.max() * 0.15   # inner 15% of trajectory
-    if inner_mask.sum() > 10:
-        # Show the region where the trajectory is actually curving
-        x_inner = x_sc[inner_mask]
-        y_inner = y_sc[inner_mask]
-        pad = max(np.abs(x_inner).max(), np.abs(y_inner).max()) * 0.25
-        x_ext = max(np.abs(x_inner).max() + pad, R_sc * 8)
-        y_ext = max(np.abs(y_inner).max() + pad, R_sc * 8)
-        ax.set_xlim(-x_ext * 0.3, x_ext * 1.1)
-        ax.set_ylim(-y_ext * 1.1, y_ext * 0.5)
-    else:
-        # Fallback: full trajectory extent
-        ext = max(np.abs(x_sc).max(), np.abs(y_sc).max()) * 1.12
-        ax.set_xlim(-ext * 0.1, ext)
-        ax.set_ylim(-ext * 0.6, ext * 0.6)
+    # Axis limits — centred on planet, padded by clip radius
+    pad    = r_clip / 1e3 * 1.15
+    x_lo   = xs_km.min() - pad * 0.05
+    x_hi   = xs_km.max() + pad * 0.15
+    y_span = max(abs(ys_km.min()), abs(ys_km.max())) + pad * 0.15
+    ax.set_xlim(x_lo, x_hi)
+    ax.set_ylim(-y_span, y_span)
 
-    ax.set_xlabel("x  (Mm)", fontsize=FL)
-    ax.set_ylabel("y  (Mm)", fontsize=FL)
+    ax.set_xlabel("x  (km)", fontsize=FL)
+    ax.set_ylabel("y  (km)", fontsize=FL)
     ax.tick_params(labelsize=FK)
     ax.legend(fontsize=FG, loc="lower right", frameon=False)
     ax.set_title(
         f"SOI approach:  {planet.name}"
-        f"   (v_inf = {v_inf_m_s/1e3:.2f} km/s)",
+        f"   (v$_\\infty$ = {v_inf_m_s / 1e3:.2f} km/s)",
         fontsize=FT, fontweight="bold", pad=4)
 
     if standalone:
@@ -911,10 +984,11 @@ def plot_transfer_dashboard(
     (a) Heliocentric transfer orbit
     (b) Porkchop C3
     (c) Porkchop arrival v_inf
-    (d) SOI approach / mission summary
+    (d) Mission ΔV breakdown — stacked bar + capture ΔV vs v∞ curve
     """
     import matplotlib.pyplot as plt
     import matplotlib.gridspec as gridspec
+    import numpy as np
 
     fig = plt.figure(figsize=(12.0, 9.5))
     fig.patch.set_facecolor("white")
@@ -946,41 +1020,117 @@ def plot_transfer_dashboard(
     plot_porkchop(porkchop_data, ax=ax_c, quantity="vinf_arr",
                    show_tof_contours=True, max_vinf_arr=7)
 
-    ax_d = fig.add_subplot(gs[1, 1])
-    if approach_trajectory is not None and soi_radius_arr_m is not None:
-        plot_soi_approach(
-            approach_trajectory, arrival_planet,
-            soi_radius_arr_m, v_inf_arr_m_s,
-            ax=ax_d, target_alt_km=300.0,
-            periapsis_alt_km=300.0,
-        )
-    else:
-        _ax(ax_d)
-        ax_d.axis("off")
-        lines_txt = [
-            f"Transfer:  {departure_planet.name} → {arrival_planet.name}",
-            "",
-            f"Time of flight    {tof_s/86400:.0f} d",
-            f"Departure v_inf   {v_inf_dep_m_s/1e3:.3f} km/s",
-            f"Arrival v_inf     {v_inf_arr_m_s/1e3:.3f} km/s",
-            f"C3                {(v_inf_dep_m_s/1e3)**2:.2f} km2/s2",
-        ]
+    # ── Panel (d): Mission ΔV breakdown ──────────────────────────────────────
+    # Split panel (d) into two side-by-side sub-axes using a nested gridspec
+    G_si = 6.674e-11
+    try:
+        from core.soi import HyperbolicDeparture, HyperbolicArrival
+        mu_dep = G_si * departure_planet.mass
+        mu_arr = G_si * arrival_planet.mass
+        r_park_dep = departure_planet.radius + 300_000
+        r_park_arr = arrival_planet.radius   + 300_000
+
+        vinf_dep = best_window.vinf_dep_m_s if best_window else v_inf_dep_m_s
+        vinf_arr = best_window.vinf_arr_m_s if best_window else v_inf_arr_m_s
+
+        dep_obj = HyperbolicDeparture(vinf_dep, 300_000,
+                                       departure_planet.radius, mu_dep)
+        arr_obj = HyperbolicArrival(vinf_arr, 300_000,
+                                     arrival_planet.radius, mu_arr,
+                                     target_alt_m=300_000)
+        sk_dv = 50.0   # station-keeping, 5 yr estimate
+
+        dv_tli   = dep_obj.delta_v_m_s
+        dv_cap   = arr_obj.dv_capture_m_s
+        dv_sk    = sk_dv
+        dv_total = dv_tli + dv_cap + dv_sk
+
+        # v∞ curve
+        vinf_range   = np.linspace(1.5, 6.0, 60)
+        dv_cap_curve = []
+        for v in vinf_range:
+            a = HyperbolicArrival(v * 1e3, 300_000,
+                                   arrival_planet.radius, mu_arr,
+                                   target_alt_m=300_000)
+            dv_cap_curve.append(a.dv_capture_m_s)
+        dv_cap_curve = np.array(dv_cap_curve)
+
+        # Nested gridspec inside gs[1,1]
+        gs_d = gridspec.GridSpecFromSubplotSpec(
+            1, 2, subplot_spec=gs[1, 1],
+            wspace=0.45, hspace=0)
+        ax_d1 = fig.add_subplot(gs_d[0, 0])
+        ax_d2 = fig.add_subplot(gs_d[0, 1])
+        _ax(ax_d1); _ax(ax_d2)
+
+        # Left: stacked horizontal bar — 3 segments (TLI / MOI capture / station-keeping)
+        full_labels = ["TLI", "MOI\ncapture", "Station-\nkeeping"]
+        values = [dv_tli, dv_cap, dv_sk]
+        colors = [W_BLUE, W_RED, W_ORANGE]
+        left = 0
+        bar_h = 0.45
+        for v, c, lbl in zip(values, colors, full_labels):
+            ax_d1.barh(0, v / 1000, left=left / 1000,
+                       height=bar_h, color=c, alpha=0.85,
+                       edgecolor="white", lw=0.8)
+            mid = (left + v / 2) / 1000
+            if v / dv_total > 0.05:   # only label if wide enough
+                ax_d1.text(mid, 0,
+                           f"{lbl}\n{v/1000:.2f}",
+                           ha="center", va="center",
+                           fontsize=FA - 1.5, color="white", fontweight="bold")
+            left += v
+
+        # Draw a legend below the bar for the tiny SK segment
+        ax_d1.text(dv_total / 1000 * 0.5, -0.40,
+                   f"Station-keeping (5 yr): {dv_sk:.0f} m/s",
+                   ha="center", va="center",
+                   fontsize=FA - 1.5, color=W_ORANGE)
+
+        ax_d1.set_xlim(0, dv_total / 1000 * 1.04)
+        ax_d1.set_ylim(-0.65, 0.65)
+        ax_d1.set_yticks([])
+        ax_d1.set_xlabel("ΔV  (km/s)", fontsize=FL)
+        ax_d1.tick_params(axis="x", labelsize=FK)
+        ax_d1.set_title(
+            f"Mission ΔV  —  total {dv_total/1000:.2f} km/s",
+            fontsize=FT, fontweight="bold", pad=4)
+
+        # Right: capture ΔV vs v∞ arrival
+        ax_d2.plot(vinf_range, dv_cap_curve / 1000,
+                   color=W_RED, lw=1.6)
+        ax_d2.axvline(vinf_arr / 1e3, color=W_ORANGE,
+                      lw=1.0, ls="--", alpha=0.8)
+        ax_d2.plot(vinf_arr / 1e3, arr_obj.dv_capture_m_s / 1000,
+                   "o", ms=5, color=W_ORANGE,
+                   markeredgecolor=W_BLACK, markeredgewidth=0.5)
+        ax_d2.text(vinf_arr / 1e3 + 0.12,
+                   arr_obj.dv_capture_m_s / 1000,
+                   "Best\nwindow",
+                   fontsize=FA - 1, color=W_ORANGE, va="center")
+        ax_d2.set_xlabel(r"Arrival $v_\infty$  (km/s)", fontsize=FL)
+        ax_d2.set_ylabel("Capture ΔV  (km/s)", fontsize=FL)
+        ax_d2.tick_params(labelsize=FK)
+        ax_d2.set_title("Capture cost vs arrival speed",
+                         fontsize=FT, fontweight="bold", pad=4)
+
+    except Exception:
+        # Fallback to plain text if soi module unavailable
+        ax_d = fig.add_subplot(gs[1, 1])
+        _ax(ax_d); ax_d.axis("off")
         if best_window:
-            lines_txt += ["",
-                f"Best window",
-                f"  Depart day   {best_window.departure_day:.0f}",
-                f"  Arrive day   {best_window.arrival_day:.0f}",
-                f"  C3           {best_window.c3_km2_s2:.2f} km2/s2",
-                f"  v_inf arr    {best_window.vinf_arr_km_s:.3f} km/s",
-            ]
-        ax_d.text(0.08, 0.90, "\n".join(lines_txt),
-                  transform=ax_d.transAxes, va="top",
-                  fontsize=FL-0.5, family="monospace", color=W_BLACK)
-        ax_d.set_title("Mission summary", fontsize=FT, fontweight="bold", pad=4)
+            txt = (f"Best window\n"
+                   f"  Depart day {best_window.departure_day:.0f}\n"
+                   f"  Arrive day {best_window.arrival_day:.0f}\n"
+                   f"  C3   {best_window.c3_km2_s2:.2f} km²/s²\n"
+                   f"  v∞   {best_window.vinf_arr_km_s:.3f} km/s")
+            ax_d.text(0.08, 0.88, txt, transform=ax_d.transAxes,
+                      va="top", fontsize=FL - 0.5,
+                      family="monospace", color=W_BLACK)
 
     fig.suptitle(
         f"Interplanetary mission:  {departure_planet.name} → {arrival_planet.name}",
-        fontsize=FT+2, fontweight="bold")
+        fontsize=FT + 2, fontweight="bold")
 
     save_figure(fig, filename, output_dir)
     return fig

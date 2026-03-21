@@ -109,7 +109,9 @@ print("\nBuilding Mars SOI approach trajectory …")
 mu_mars    = G * mars.mass
 soi_mars_m = laplace_soi_radius(mars.mass, 1.524 * AU)
 
-v_inf_mars = vinf_arr
+# Use the best window v∞ for the SOI plot — gives a more physically
+# representative arrival (lower v∞ = more visible gravitational bending)
+v_inf_mars = best_win.vinf_arr_m_s if best_win else vinf_arr
 r_peri     = mars.radius + 300_000
 
 # Hyperbola geometry
@@ -229,7 +231,7 @@ fig14 = plot_transfer_dashboard(
     transfer_trajectory = transfer_traj,
     tof_s               = tof_s,
     v_inf_dep_m_s       = vinf_dep,
-    v_inf_arr_m_s       = vinf_arr,
+    v_inf_arr_m_s       = v_inf_mars,   # best window v∞, not arbitrary transfer
     approach_trajectory = approach_traj,
     soi_radius_arr_m    = soi_mars_m,
     star_name           = "Sun",

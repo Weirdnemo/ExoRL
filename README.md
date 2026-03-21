@@ -17,7 +17,7 @@ It was built to answer a research question: can a reinforcement learning agent l
 - **5. Population** — `population`
 - **6. RL Environments** — `env` · `interplanetary_env`
 - **7. Visualisation** — `visualization`
-- **8. Scripts** — `science_demo` · `planets_demo` · `population_demo` · `transfer_vis_demo`
+- **8. Scripts** — `science_demo` · `planets_demo` · `population_demo` · `transfer_viz_demo`
 - **9. Known Limitations**
 
 ---
@@ -770,12 +770,12 @@ python population_demo.py --n 500
 python population_demo.py --load population_500.csv  # skip generation
 ```
 
-### `transfer_vis_demo.py`
+### `transfer_viz_demo.py`
 
 Produces the interplanetary transfer figures (`fig11` through `fig14`).
 
 ```bash
-python transfer_vis_demo.py
+python transfer_viz_demo.py
 ```
 
 ---
