@@ -511,7 +511,7 @@ print(budget["dv_total_m_s"])   # ~5960 m/s for Earth→Mars
 Porkchop grid computation, optimal window selection, and the RL decision space interface.
 
 ```python
-from core.launch_window import PorkchopData, LaunchDecisionSpace
+from core.launch_window import PorkchopData, LaunchDecisionSpace, AU
 import numpy as np
 
 # Compute the porkchop grid
