@@ -3,8 +3,8 @@ visualization/__pycache__/
 .vscode/settings.json
 nogithub.py
 testing_nogithub.py
-training_runs/earth_baseline_fixed_20260325_184215/learning_curve.csv
-training_runs/earth_baseline_fixed_20260325_184215/config.json
-training_runs/earth_baseline_fixed_20260325_184215/eval_results.json
-training_runs/earth_baseline_fixed_20260325_184215/learning_curve.png
-training_runs/earth_baseline_fixed_20260325_184215/model_final.zip
+training_sac.py
+core/env.py
+test.py
+training_runs/
+
