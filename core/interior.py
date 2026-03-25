@@ -1,6 +1,9 @@
 """
 interior.py — Layered planetary interior model.
 
+Replaces the hand-set MagneticFieldStrength enum and OblatenessConfig.J2
+with values physically derived from internal structure.
+
 Physical chain:
   layer densities + radii
       → bulk mass ✓ (self-consistent with planet.mass)
@@ -33,7 +36,8 @@ k_B         = 1.380_649e-23  # J K⁻¹  (Boltzmann)
 SIGMA_SB    = 5.670_374e-8   # W m⁻² K⁻⁴  (Stefan-Boltzmann)
 
 # ── Radiogenic heat production rates (W/kg of element) ───────────────────────
-HEAT_U238   = 9.46e-5    # ²³⁸U
+# Present-day values; scale by exp(-λt) for early planet
+HEAT_U238   = 9.46e-5    # ²³⁸U   — dominant in Earth's mantle
 HEAT_U235   = 5.69e-4    # ²³⁵U
 HEAT_TH232  = 2.64e-5    # ²³²Th
 HEAT_K40    = 2.92e-5    # ⁴⁰K
@@ -54,6 +58,34 @@ BSE_HEAT_PER_KG = 0.55 * (BSE_U * HEAT_U238 +
                             BSE_U * 0.0072 * HEAT_U235 +
                             BSE_TH * HEAT_TH232 +
                             BSE_K * K40_FRAC * HEAT_K40)   # → ~4.1e-12 W/kg
+
+# ── Secular cooling parameterisation (Stevenson 1983; Schubert et al. 2001) ──
+# Rocky planets store gravitational and thermal energy from formation.
+# This secular cooling contributes ~49 mW/m² for Earth today (≈53% of total).
+# Scaling: q_secular = Q_SEC_EARTH × (M/M_E)^0.7 × (4.5/age_Gyr)^0.5
+# Calibration:
+#   Earth (4.5 Gyr): 49 mW/m²  ✓
+#   Mars  (4.5 Gyr): 10 mW/m²  vs real ~6-18 mW/m²  ✓
+#   Venus (4.5 Gyr): 43 mW/m²  vs real ~35-50 mW/m²  ✓
+#   Moon  (4.5 Gyr):  2 mW/m²  vs real ~12 mW/m²  (underestimate — ok for small body)
+Q_SEC_EARTH   = 49e-3    # W/m²   secular heat flux for Earth today
+M_EARTH_REF   = 5.972e24 # kg     Earth mass reference
+AGE_EARTH_REF = 4.5      # Gyr    Earth age reference
+
+# ── Rotation rate threshold for dynamo activity ───────────────────────────────
+# A magnetic dynamo requires convection in a conducting liquid outer core AND
+# sufficient rotation to organise it into a dipole (Taylor-Proudman theorem).
+# Venus (period=5832 hr) has no dynamo despite an Earth-like iron core.
+# The Rossby number Ro = U/(Ω·L) >> 1 for slow rotators → no dipole.
+# Empirical threshold from solar system: rotation period < DYNAMO_MAX_PERIOD_HR
+# Earth: 24 hr  → active dynamo   ✓
+# Venus: 5832 hr → inactive        ✓
+# Mars:  24.6 hr → currently off   (uses core state; correct given cooled core)
+# Moon:  655 hr  → inactive        ✓
+DYNAMO_MAX_PERIOD_HR = 400.0    # hours — bodies rotating slower are dynamo-inactive
+# Calibration: Earth 24 hr → active ✓  Moon 656 hr → inactive ✓  Venus 5832 hr → inactive ✓
+# Mars 24.6 hr → passes rotation check (inactive due to cooled core, correct)
+# Titan 382 hr → passes (no conducting core, also correct)
 
 # ── Material density library (kg/m³) ─────────────────────────────────────────
 MATERIAL_DENSITY = {
@@ -99,7 +131,7 @@ class InteriorLayer:
     outer_radius_frac: float          # 0 < f ≤ 1.0
     density: float                    # kg/m³
     material: str = "silicate_mix"
-    heat_production: Optional[float] = None
+    heat_production: Optional[float] = None   # W/kg; None → BSE default
     is_liquid: bool = False
     is_conducting: bool = False
 
@@ -344,7 +376,16 @@ class InteriorConfig:
                 hp = lyr.heat_production
             heat_total_W += hp * d["mass"]
 
-        heat_flux_surface = heat_total_W / (4 * math.pi * R**2)  # W/m²
+        heat_flux_radio   = heat_total_W / (4 * math.pi * R**2)  # W/m²
+
+        # Add secular cooling contribution
+        # q_secular scales with planet mass and cooling age
+        planet_mass = sum(d["mass"] for d in layer_data)
+        age_gyr     = max(self.age_gyr, 0.1)   # avoid division by zero for new planets
+        q_secular   = (Q_SEC_EARTH
+                       * (planet_mass / M_EARTH_REF) ** 0.7
+                       * (AGE_EARTH_REF / age_gyr) ** 0.5)
+        heat_flux_surface = heat_flux_radio + q_secular
 
         # ── Mantle convection state ────────────────────────────────────────────
         convection = self._convection_state(heat_flux_surface, planet_mass)
@@ -369,7 +410,12 @@ class InteriorConfig:
             EARTH_POWER     = 4e12     # W  (convective power estimate)
             EARTH_RC        = 0.35 * 6.371e6   # m
 
-            if rho_core_mean > 0 and heat_total_W > 0:
+            # Rotation-rate check: slow rotators cannot sustain a magnetic dynamo
+            # regardless of core state (Rossby number criterion)
+            rotation_period_hr = getattr(self, "_planet_rotation_hr", 24.0)
+            rotation_suppresses_dynamo = (rotation_period_hr > DYNAMO_MAX_PERIOD_HR)
+
+            if rho_core_mean > 0 and heat_total_W > 0 and not rotation_suppresses_dynamo:
                 # Scaling ratio relative to Earth.
                 # The dipole field scales as (rho_core × P_conv / r_c^2)^(1/3)
                 # and attenuates as (r_c/R)^3 from CMB to surface.
@@ -385,6 +431,10 @@ class InteriorConfig:
                 # Hard cap: even Jupiter's field is only ~400 μT at surface
                 B_surface_scaled = min(B_surface_scaled, 5e-4)
             else:
+                B_surface_scaled = 0.0
+
+            # Suppress dynamo if rotation too slow (Venus, tidally locked bodies)
+            if rotation_suppresses_dynamo:
                 B_surface_scaled = 0.0
         else:
             B_surface_scaled = 0.0

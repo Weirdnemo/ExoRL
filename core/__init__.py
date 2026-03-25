@@ -109,3 +109,11 @@ from core.observation import (
 
 # ── Interplanetary RL environment ─────────────────────────────────────────────
 from core.interplanetary_env import InterplanetaryEnv, MissionConfig
+
+# ── Planet I/O and serialisation ─────────────────────────────────────────────
+from core.planet_io import (planet_to_json, planet_from_json,
+                              planet_fingerprint, save_planet, load_planet)
+import core.planet_io   # triggers Planet.to_json / .from_json / .fingerprint patch
+
+# ── Reference exoplanet catalog ───────────────────────────────────────────────
+from core.kepler_catalog import KeplerCatalog

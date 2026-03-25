@@ -278,12 +278,16 @@ def _attach_interior_and_star():
     unaffected; the new fields default to None.
     """
     import dataclasses as _dc
-    from core.interior import InteriorConfig, ConvectionState   
-    from core.star import Star                                   
+    from core.interior import InteriorConfig, ConvectionState   # noqa: F401
+    from core.star import Star                                   # noqa: F401
 
+    # ── Add optional fields ───────────────────────────────────────────────────
+    # We extend the dataclass fields list so Planet(interior=...) works.
+    # This is safe because dataclass fields are stored on the class, not instances.
     existing_fields = {f.name for f in _dc.fields(Planet)}
 
-    if "interior" not in existing_fields:        
+    if "interior" not in existing_fields:
+        # Inject new fields with defaults
         Planet.__dataclass_fields__["interior"] = _dc.field(
             default=None, repr=True, compare=True
         )
@@ -294,6 +298,7 @@ def _attach_interior_and_star():
             default=None, repr=False, compare=False
         )
 
+        # Patch __init__ to accept and store new fields
         _orig_init = Planet.__init__
 
         def _new_init(self, *args, interior=None, star_context=None,
@@ -318,6 +323,11 @@ def _attach_interior_and_star():
             )
         return self.oblateness.J2
 
+    def _sync_rotation_to_interior(self) -> None:
+        """Inject planet rotation period into interior for dynamo Rossby check."""
+        if self.interior is not None and self.rotation_enabled and self.rotation_period:
+            self.interior._planet_rotation_hr = abs(self.rotation_period) / 3600.0
+
     def derived_magnetic_field_T(self) -> float:
         """
         Surface dipole field strength [Tesla] from interior dynamo model.
@@ -325,7 +335,9 @@ def _attach_interior_and_star():
         Earth ≈ 3e-5 T (30 μT).
         """
         if self.interior and self.interior.enabled:
+            self._sync_rotation_to_interior()
             return self.interior.surface_magnetic_field_T(self.radius, self.mass)
+        # Fallback: map enum to approximate B
         _B_MAP = {
             MagneticFieldStrength.NONE:   0.0,
             MagneticFieldStrength.WEAK:   3e-6,
@@ -336,11 +348,12 @@ def _attach_interior_and_star():
 
     def derived_heat_flux(self) -> float:
         """
-        Surface radiogenic heat flux [W/m²] from interior model.
-        Earth present-day ≈ 0.030 W/m².
+        Surface total heat flux [W/m²] from interior model (radiogenic + secular cooling).
+        Earth present-day ≈ 0.087 W/m² (87 mW/m²).
         Returns 0 if interior not enabled.
         """
         if self.interior and self.interior.enabled:
+            self._sync_rotation_to_interior()
             return self.interior.radiogenic_heat_flux(self.radius, self.mass)
         return 0.0
 
@@ -406,6 +419,7 @@ def _attach_interior_and_star():
         return False
 
     # Attach methods
+    Planet._sync_rotation_to_interior = _sync_rotation_to_interior
     Planet.derived_J2                = derived_J2
     Planet.derived_magnetic_field_T  = derived_magnetic_field_T
     Planet.derived_heat_flux         = derived_heat_flux
@@ -461,4 +475,6 @@ def _attach_interior_and_star():
 
     Planet.summary = extended_summary
 
+
+# Run the extension immediately on import
 _attach_interior_and_star()

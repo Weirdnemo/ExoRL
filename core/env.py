@@ -1,6 +1,14 @@
 """
 env.py — Gymnasium-compatible RL environment for orbital insertion.
 
+Upgraded to use the Planet-RL science stack:
+  - J2 from interior model (derived_J2) when available, not hand-set
+  - Atmosphere density from MultiLayerAtmosphere (layered, physical)
+  - Star context attached so habitability can be scored
+  - Extended observation vector (18 floats) with science quantities
+  - Curriculum mode: sorts episode difficulty by habitability score
+  - Science reward bonus: rewards frozen/sun-sync orbit design
+
 Observation space (18 x float32)
 ─────────────────────────────────
 Dynamic state (changes every step):
@@ -54,6 +62,7 @@ from core.planet import Planet
 from core.generator import PlanetGenerator, PRESETS
 from core.physics import SpacecraftState, OrbitalIntegrator, ThrusterConfig, AeroConfig
 
+# Science stack imports — graceful fallback if not available
 try:
     from core.interior import InteriorConfig, interior_from_bulk_density
     _INTERIOR_OK = True
@@ -517,8 +526,10 @@ class OrbitalInsertionEnv(gym.Env if GYM_AVAILABLE else object):
         if success:
             total += self.reward_success
             if self.obs_dim >= 18 and self._sci_ctx is not None:
+                # Frozen orbit bonus
                 ecc_err = abs(ecc - self._sci_ctx.frozen_ecc)
                 total += self.reward_science_orbit * max(0.0, 1.0 - ecc_err / 0.01) * 0.5
+                # Habitability bonus
                 total += self.reward_science_orbit * self._sci_ctx.hab_score * 0.5
 
         if crashed:
@@ -600,6 +611,7 @@ class OrbitalInsertionEnv(gym.Env if GYM_AVAILABLE else object):
             math.sin(pitch) * r_hat
         )
 
+        # Patch atmosphere density with science model for this step
         _orig = None
         if self._sci_atm is not None and self._sci_atm._multi is not None:
             _orig = self.planet.atmosphere.density_at_altitude
@@ -646,7 +658,7 @@ class OrbitalInsertionEnv(gym.Env if GYM_AVAILABLE else object):
             "step":         self._step_count,
             "habitability": self._sci_ctx.hab_score if self._sci_ctx else 0.0,
         }
-        return obs, reward, terminated, truncated, info
+        return obs, reward, bool(terminated), bool(truncated), info
 
     def get_trajectory(self) -> list[SpacecraftState]:
         return self._trajectory
