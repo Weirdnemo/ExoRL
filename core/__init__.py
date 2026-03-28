@@ -117,3 +117,6 @@ import core.planet_io   # triggers Planet.to_json / .from_json / .fingerprint pa
 
 # ── Reference exoplanet catalog ───────────────────────────────────────────────
 from core.kepler_catalog import KeplerCatalog
+
+# ── Geology and tectonic regime ───────────────────────────────────────────────
+from core.geology import GeologyModel, TectonicRegime

@@ -8,3 +8,4 @@ core/env.py
 test.py
 training_runs/
 
+bc_model/

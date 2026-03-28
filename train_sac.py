@@ -62,6 +62,8 @@ parser.add_argument("--buffer",  type=int,   default=100_000, help="Replay buffe
 parser.add_argument("--hidden",  type=int,   default=256,  help="Hidden layer size")
 parser.add_argument("--no-science", action="store_true",
                     help="Disable science stack (legacy 10-dim obs)")
+parser.add_argument("--pretrain", default=None,
+                    help="Path to BC-pretrained .zip model for warm start")
 args = parser.parse_args()
 
 # ── Imports ───────────────────────────────────────────────────────────────────
@@ -237,6 +239,27 @@ model = SAC(
 
 n_params = sum(p.numel() for p in model.policy.parameters())
 print(f"SAC policy: {n_params:,} parameters  hidden={args.hidden}×2  obs={obs_dim}  act=3")
+
+# Warm start: load BC-pretrained actor weights into SAC policy
+if args.pretrain and os.path.exists(args.pretrain):
+    import torch
+    print(f"Loading BC pretrained weights: {args.pretrain}")
+    bc_model = SAC.load(args.pretrain)
+    try:
+        with torch.no_grad():
+            dst = model.policy.actor
+            src_actor = bc_model.policy.actor
+            dst.latent_pi[0].weight.copy_(src_actor.latent_pi[0].weight)
+            dst.latent_pi[0].bias.copy_(  src_actor.latent_pi[0].bias)
+            dst.latent_pi[2].weight.copy_(src_actor.latent_pi[2].weight)
+            dst.latent_pi[2].bias.copy_(  src_actor.latent_pi[2].bias)
+            dst.mu.weight.copy_(           src_actor.mu.weight)
+            dst.mu.bias.copy_(             src_actor.mu.bias)
+        print("  ✓ BC actor weights loaded — warm start active")
+    except Exception as e:
+        print(f"  ✗ BC weight transfer failed: {e}  — training from scratch")
+elif args.pretrain:
+    print(f"  Warning: --pretrain path not found: {args.pretrain}")
 print(f"Training:   {args.steps:,} steps  eval_freq={args.eval_freq:,}  seed={args.seed}")
 print(f"Mode:       {args.mode}" +
       (f"  planet={args.planet}" if args.mode == "fixed" else ""))

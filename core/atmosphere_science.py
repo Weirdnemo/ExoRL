@@ -9,10 +9,6 @@ Replaces the single exponential AtmosphereConfig with a layered model that:
   - Estimates greenhouse warming from CO₂, CH₄, H₂O concentrations
   - Produces surface temperature from stellar flux + greenhouse (not hand-set)
 
-Backward compatible: the existing AtmosphereConfig is still used by the RL
-environment. This module is an *add-on* that runs on top of it when scientific
-analysis is requested.
-
 All SI units unless noted.
 
 References:
