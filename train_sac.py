@@ -106,7 +106,10 @@ def make_env(seed_offset=0):
             kwargs["randomize_planet"] = False
             kwargs["curriculum_mode"]  = False
         elif args.mode == "random":
-            kwargs["randomize_planet"] = True
+            # Cycle all 5 preset planets + random to prevent catastrophic forgetting
+            all_presets = ["earth", "mars", "venus", "moon", "titan"]
+            kwargs["planet_preset"]    = all_presets[seed_offset % len(all_presets)]
+            kwargs["randomize_planet"] = (seed_offset % 2 == 1)
             kwargs["curriculum_mode"]  = False
         else:  # curriculum
             kwargs["randomize_planet"]      = True

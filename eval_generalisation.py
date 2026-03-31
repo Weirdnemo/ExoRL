@@ -80,7 +80,7 @@ def evaluate_on_planet(planet_name_or_obj, n_episodes, policy,
             obs_dim=18,
             planet_preset=planet_name_or_obj,
             randomize_planet=False,
-            curriculum_mode=False,
+            initial_altitude=0,        # must match training env
             use_science_atmosphere=True,
             use_science_j2=True,
             attach_star=True,
@@ -118,7 +118,9 @@ def evaluate_on_planet(planet_name_or_obj, n_episodes, policy,
 
         rewards.append(ep_r)
         successes.append(float(ep_info.get("success", False)))
-        fuels.append(float(ep_info.get("fuel_fraction", 0.5)))
+        # fuel_fraction not in info dict — compute from fuel_kg
+        fuel_kg = float(ep_info.get("fuel_kg", 700.0))
+        fuels.append(min(fuel_kg / 700.0, 1.0))   # normalise by default wet_mass
         lengths.append(ep_len)
 
     # Compute Hohmann optimal fuel fraction for comparison

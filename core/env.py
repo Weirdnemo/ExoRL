@@ -26,7 +26,7 @@ Planet context (constant per episode):
   [9]  target_alt_norm        target_alt / R               (0..0.3)
   [10] j2_norm                J2 x 1000                    (0..3)
   [11] mag_field_norm         B / 60e-6                    (0..2)
-  [12] surface_pressure_norm  P_srf / 1e5                  (0..100)
+  [12] surface_pressure_norm  log(1+P_srf/1e5)/log(101)    (0..1)
   [13] habitability_norm      score                        (0..1)
   [14] star_type_norm         0=M, 0.5=K, 1=G              (0..1)
   [15] orbital_dist_norm      d_AU / 5                     (0..1)
@@ -187,7 +187,7 @@ class PlanetScienceContext:
         return np.array([
             min(self.j2 * 1000, 3.0),
             min(abs(self.B_T) / 60e-6, 2.0),
-            min(self.P_srf / 1e5, 100.0),
+            math.log1p(self.P_srf / 1e5) / math.log1p(100.0),  # log-normalised: Earth=0.15, Venus=0.99
             float(self.hab_score),
             float(self.star_type_norm),
             min(self.orbital_dist_au / 5.0, 1.0),

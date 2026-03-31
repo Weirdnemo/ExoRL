@@ -9,3 +9,5 @@ test.py
 training_runs/
 
 bc_model/
+bc_model_v2/
+demos/
