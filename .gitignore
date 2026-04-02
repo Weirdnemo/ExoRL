@@ -4,10 +4,9 @@ visualization/__pycache__/
 nogithub.py
 testing_nogithub.py
 training_sac.py
-core/env.py
 test.py
 training_runs/
-
 bc_model/
 bc_model_v2/
 demos/
+Planet-RL/science_figures/population_500.csv

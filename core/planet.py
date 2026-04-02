@@ -4,56 +4,78 @@ All SI units unless stated otherwise.
 """
 
 from __future__ import annotations
-import math
+
 import dataclasses
-from typing import Optional
+import math
+import os
+import sys
 from enum import Enum, auto
+from typing import Optional
+
+
+# ── Path bootstrap ────────────────────────────────────────────────────────────
+# Allow `python core/planet.py` and `python planet.py` (from core/) to both
+# resolve `from core.X` imports correctly.  We add the project root — the
+# directory that CONTAINS the `core/` package — to sys.path if it isn't there.
+def _ensure_project_root_on_path() -> None:
+    # __file__ is .../Planet-RL/core/planet.py
+    # project root is one level up: .../Planet-RL/
+    _this_dir = os.path.dirname(os.path.abspath(__file__))  # .../core
+    _proj_root = os.path.dirname(_this_dir)  # .../Planet-RL
+    if _proj_root not in sys.path:
+        sys.path.insert(0, _proj_root)
+
+
+_ensure_project_root_on_path()
 
 
 # ── Physical constants ────────────────────────────────────────────────────────
-G  = 6.674_30e-11   # gravitational constant  [m³ kg⁻¹ s⁻²]
-R_EARTH  = 6.371e6  # Earth radius            [m]
-M_EARTH  = 5.972e24 # Earth mass              [kg]
+G = 6.674_30e-11  # gravitational constant  [m³ kg⁻¹ s⁻²]
+R_EARTH = 6.371e6  # Earth radius            [m]
+M_EARTH = 5.972e24  # Earth mass              [kg]
 ATM_EARTH = 101_325  # Earth sea-level pressure [Pa]
 
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 class AtmosphereComposition(Enum):
-    NONE        = auto()   # vacuum
-    CO2_THICK   = auto()   # Venus / early Mars style
-    CO2_THIN    = auto()   # Mars style
-    NITROGEN    = auto()   # Earth-like but inert
-    EARTH_LIKE  = auto()   # N₂/O₂ mix
-    HYDROGEN    = auto()   # Gas giant envelope
-    METHANE     = auto()   # Titan-like
-    CUSTOM      = auto()   # user-defined molar mass / heat cap
+    NONE = auto()  # vacuum
+    CO2_THICK = auto()  # Venus / early Mars style
+    CO2_THIN = auto()  # Mars style
+    NITROGEN = auto()  # Earth-like but inert
+    EARTH_LIKE = auto()  # N₂/O₂ mix
+    HYDROGEN = auto()  # Gas giant envelope
+    METHANE = auto()  # Titan-like
+    CUSTOM = auto()  # user-defined molar mass / heat cap
+
 
 class TerrainType(Enum):
-    FLAT        = auto()
-    CRATERED    = auto()
+    FLAT = auto()
+    CRATERED = auto()
     MOUNTAINOUS = auto()
-    OCEANIC     = auto()
-    VOLCANIC    = auto()
-    RANDOM      = auto()
+    OCEANIC = auto()
+    VOLCANIC = auto()
+    RANDOM = auto()
+
 
 class MagneticFieldStrength(Enum):
-    NONE   = auto()
-    WEAK   = auto()   # 10% of Earth
-    MEDIUM = auto()   # Earth-like
-    STRONG = auto()   # Jupiter-like
+    NONE = auto()
+    WEAK = auto()  # 10% of Earth
+    MEDIUM = auto()  # Earth-like
+    STRONG = auto()  # Jupiter-like
+
 
 # ── Atmosphere profile ────────────────────────────────────────────────────────
 @dataclasses.dataclass
 class AtmosphereConfig:
     enabled: bool = True
     composition: AtmosphereComposition = AtmosphereComposition.EARTH_LIKE
-    scale_height: float = 8_500.0        # [m] density e-folding height
+    scale_height: float = 8_500.0  # [m] density e-folding height
     surface_pressure: float = 101_325.0  # [Pa]
-    surface_density: float = 1.225       # [kg/m³]
-    surface_temp: float = 288.0          # [K]
-    lapse_rate: float = 0.0065           # [K/m]  tropospheric lapse
+    surface_density: float = 1.225  # [kg/m³]
+    surface_temp: float = 288.0  # [K]
+    lapse_rate: float = 0.0065  # [K/m]  tropospheric lapse
     # aerodynamics
-    drag_coeff_multiplier: float = 1.0   # global scale on Cd
+    drag_coeff_multiplier: float = 1.0  # global scale on Cd
     wind_enabled: bool = False
     wind_speed_mps: float = 0.0
     wind_direction_deg: float = 0.0
@@ -72,40 +94,44 @@ class AtmosphereConfig:
     def temperature_at_altitude(self, altitude: float) -> float:
         """Simple linear lapse in troposphere, isothermal above."""
         if not self.enabled:
-            return 2.7   # CMB
+            return 2.7  # CMB
         tropo_top = self.surface_temp / self.lapse_rate if self.lapse_rate > 0 else 1e9
         if altitude <= tropo_top:
             return max(self.surface_temp - self.lapse_rate * altitude, 50.0)
         return self.surface_temp - self.lapse_rate * tropo_top
+
 
 # ── Terrain config ────────────────────────────────────────────────────────────
 @dataclasses.dataclass
 class TerrainConfig:
     enabled: bool = True
     terrain_type: TerrainType = TerrainType.CRATERED
-    max_elevation: float = 8_848.0   # [m]  highest peak
-    min_elevation: float = -11_000.0 # [m]  deepest trench
-    roughness: float = 0.5           # 0=glass-smooth, 1=extreme
+    max_elevation: float = 8_848.0  # [m]  highest peak
+    min_elevation: float = -11_000.0  # [m]  deepest trench
+    roughness: float = 0.5  # 0=glass-smooth, 1=extreme
     seed: int = 42
+
 
 # ── Magnetic field config ─────────────────────────────────────────────────────
 @dataclasses.dataclass
 class MagneticFieldConfig:
     enabled: bool = False
     strength: MagneticFieldStrength = MagneticFieldStrength.MEDIUM
-    tilt_deg: float = 11.5           # dipole tilt from rotation axis
+    tilt_deg: float = 11.5  # dipole tilt from rotation axis
     # radiation belt intensity (affects spacecraft charging)
     radiation_belt_enabled: bool = False
-    inner_belt_altitude: float = 1_000e3   # [m]
+    inner_belt_altitude: float = 1_000e3  # [m]
     outer_belt_altitude: float = 25_000e3  # [m]
+
 
 # ── Oblateness / J2 config ────────────────────────────────────────────────────
 @dataclasses.dataclass
 class OblatenessConfig:
     enabled: bool = False
-    J2: float = 1.082_63e-3   # Earth's J2 (dimensionless)
-    J3: float = -2.53e-6      # Earth's J3
-    flattening: float = 1/298.257  # a-c / a
+    J2: float = 1.082_63e-3  # Earth's J2 (dimensionless)
+    J3: float = -2.53e-6  # Earth's J3
+    flattening: float = 1 / 298.257  # a-c / a
+
 
 # ── Moon config ───────────────────────────────────────────────────────────────
 @dataclasses.dataclass
@@ -115,6 +141,7 @@ class MoonConfig:
     mass_fraction: float = 0.012  # moon mass / planet mass  (Earth/Moon ≈ 0.0123)
     orbit_radius: float = 384_400e3  # [m]  semi-major axis
 
+
 # ── Main Planet dataclass ─────────────────────────────────────────────────────
 @dataclasses.dataclass
 class Planet:
@@ -122,19 +149,21 @@ class Planet:
     name: str = "Planet-X"
 
     # ── Size ──
-    radius: float = R_EARTH        # [m]
-    mass: float   = M_EARTH        # [kg]
+    radius: float = R_EARTH  # [m]
+    mass: float = M_EARTH  # [kg]
 
     # ── Rotation ──
     rotation_enabled: bool = True
     rotation_period: float = 86_400.0  # [s]  sidereal day
 
     # ── Sub-systems (all individually toggleable) ──
-    atmosphere: AtmosphereConfig    = dataclasses.field(default_factory=AtmosphereConfig)
-    terrain: TerrainConfig          = dataclasses.field(default_factory=TerrainConfig)
-    magnetic_field: MagneticFieldConfig = dataclasses.field(default_factory=MagneticFieldConfig)
-    oblateness: OblatenessConfig    = dataclasses.field(default_factory=OblatenessConfig)
-    moons: MoonConfig               = dataclasses.field(default_factory=MoonConfig)
+    atmosphere: AtmosphereConfig = dataclasses.field(default_factory=AtmosphereConfig)
+    terrain: TerrainConfig = dataclasses.field(default_factory=TerrainConfig)
+    magnetic_field: MagneticFieldConfig = dataclasses.field(
+        default_factory=MagneticFieldConfig
+    )
+    oblateness: OblatenessConfig = dataclasses.field(default_factory=OblatenessConfig)
+    moons: MoonConfig = dataclasses.field(default_factory=MoonConfig)
 
     # ── Derived (computed on access) ──────────────────────────────────────────
     @property
@@ -158,9 +187,11 @@ class Planet:
         return math.sqrt(self.mu / self.radius)
 
     @property
-    def hill_sphere_radius(self, parent_mu: float = 1.327e20, orbit_radius: float = 1.496e11) -> float:
+    def hill_sphere_radius(
+        self, parent_mu: float = 1.327e20, orbit_radius: float = 1.496e11
+    ) -> float:
         """Approximate Hill sphere radius assuming Sun-like parent  [m]"""
-        return orbit_radius * (self.mass / (3 * parent_mu / G)) ** (1/3)
+        return orbit_radius * (self.mass / (3 * parent_mu / G)) ** (1 / 3)
 
     @property
     def surface_area(self) -> float:
@@ -168,7 +199,7 @@ class Planet:
 
     @property
     def volume(self) -> float:
-        return (4/3) * math.pi * self.radius**3
+        return (4 / 3) * math.pi * self.radius**3
 
     @property
     def mean_density(self) -> float:
@@ -180,7 +211,9 @@ class Planet:
         r = self.radius + altitude
         return self.mu / r**2
 
-    def gravity_vector_J2(self, r_vec: tuple[float, float, float]) -> tuple[float, float, float]:
+    def gravity_vector_J2(
+        self, r_vec: tuple[float, float, float]
+    ) -> tuple[float, float, float]:
         """
         Gravitational acceleration including J2 oblateness correction.
         r_vec: position in planet-centred inertial frame (ECI-like) [m]
@@ -198,7 +231,7 @@ class Planet:
         if self.oblateness.enabled:
             J2 = self.oblateness.J2
             Re = self.radius
-            factor = (3/2) * J2 * mu * Re**2 / r**5
+            factor = (3 / 2) * J2 * mu * Re**2 / r**5
             ax += factor * x * (5 * z**2 / r**2 - 1)
             ay += factor * y * (5 * z**2 / r**2 - 1)
             az += factor * z * (5 * z**2 / r**2 - 3)
@@ -223,13 +256,18 @@ class Planet:
         r2 = self.radius + alt2
         v1 = math.sqrt(self.mu / r1)
         v2 = math.sqrt(self.mu / r2)
-        v_trans_peri = math.sqrt(self.mu * (2/r1 - 1/((r1+r2)/2)))
-        v_trans_apo  = math.sqrt(self.mu * (2/r2 - 1/((r1+r2)/2)))
+        v_trans_peri = math.sqrt(self.mu * (2 / r1 - 1 / ((r1 + r2) / 2)))
+        v_trans_apo = math.sqrt(self.mu * (2 / r2 - 1 / ((r1 + r2) / 2)))
         return (abs(v_trans_peri - v1), abs(v2 - v_trans_apo))
 
-    def aerobraking_deceleration(self, altitude: float, speed: float,
-                                  Cd: float = 2.2, area: float = 10.0,
-                                  sc_mass: float = 1000.0) -> float:
+    def aerobraking_deceleration(
+        self,
+        altitude: float,
+        speed: float,
+        Cd: float = 2.2,
+        area: float = 10.0,
+        sc_mass: float = 1000.0,
+    ) -> float:
         """
         Aerodynamic drag deceleration  [m/s²]
         F_drag = 0.5 * ρ * v² * Cd * A   →   a = F/m
@@ -243,24 +281,27 @@ class Planet:
     def summary(self) -> str:
         lines = [
             f"═══ {self.name} ═══",
-            f"  Radius          : {self.radius/1e3:.1f} km  ({self.radius/R_EARTH:.3f} R⊕)",
-            f"  Mass            : {self.mass:.3e} kg  ({self.mass/M_EARTH:.3f} M⊕)",
+            f"  Radius          : {self.radius / 1e3:.1f} km  ({self.radius / R_EARTH:.3f} R⊕)",
+            f"  Mass            : {self.mass:.3e} kg  ({self.mass / M_EARTH:.3f} M⊕)",
             f"  Surface gravity : {self.surface_gravity:.3f} m/s²",
-            f"  Escape velocity : {self.escape_velocity/1e3:.3f} km/s",
-            f"  1st cosmic vel  : {self.first_cosmic_velocity/1e3:.3f} km/s",
+            f"  Escape velocity : {self.escape_velocity / 1e3:.3f} km/s",
+            f"  1st cosmic vel  : {self.first_cosmic_velocity / 1e3:.3f} km/s",
             f"  Mean density    : {self.mean_density:.1f} kg/m³",
-            f"  Rotation period : {'disabled' if not self.rotation_enabled else f'{self.rotation_period/3600:.2f} h'}",
+            f"  Rotation period : {'disabled' if not self.rotation_enabled else f'{self.rotation_period / 3600:.2f} h'}",
             f"  Atmosphere      : {'ON' if self.atmosphere.enabled else 'OFF'}"
-                + (f" | ρ₀={self.atmosphere.surface_density:.3f} kg/m³"
-                   f" | H={self.atmosphere.scale_height/1e3:.1f} km"
-                   if self.atmosphere.enabled else ""),
+            + (
+                f" | ρ₀={self.atmosphere.surface_density:.3f} kg/m³"
+                f" | H={self.atmosphere.scale_height / 1e3:.1f} km"
+                if self.atmosphere.enabled
+                else ""
+            ),
             f"  Terrain         : {'ON' if self.terrain.enabled else 'OFF'}"
-                + (f" | {self.terrain.terrain_type.name}" if self.terrain.enabled else ""),
+            + (f" | {self.terrain.terrain_type.name}" if self.terrain.enabled else ""),
             f"  Magnetic field  : {'ON' if self.magnetic_field.enabled else 'OFF'}",
             f"  J2 oblateness   : {'ON' if self.oblateness.enabled else 'OFF'}"
-                + (f" | J2={self.oblateness.J2:.4e}" if self.oblateness.enabled else ""),
+            + (f" | J2={self.oblateness.J2:.4e}" if self.oblateness.enabled else ""),
             f"  Moons           : {'ON' if self.moons.enabled else 'OFF'}"
-                + (f" | n={self.moons.count}" if self.moons.enabled else ""),
+            + (f" | n={self.moons.count}" if self.moons.enabled else ""),
         ]
         return "\n".join(lines)
 
@@ -268,6 +309,7 @@ class Planet:
 # ─────────────────────────────────────────────────────────────────────────────
 # Extended planet with interior + stellar context (Step 1 additions)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _attach_interior_and_star():
     """
@@ -278,8 +320,9 @@ def _attach_interior_and_star():
     unaffected; the new fields default to None.
     """
     import dataclasses as _dc
-    from core.interior import InteriorConfig, ConvectionState   # noqa: F401
-    from core.star import Star                                   # noqa: F401
+
+    from core.interior import ConvectionState, InteriorConfig  # noqa: F401
+    from core.star import Star  # noqa: F401
 
     # ── Add optional fields ───────────────────────────────────────────────────
     # We extend the dataclass fields list so Planet(interior=...) works.
@@ -301,12 +344,18 @@ def _attach_interior_and_star():
         # Patch __init__ to accept and store new fields
         _orig_init = Planet.__init__
 
-        def _new_init(self, *args, interior=None, star_context=None,
-                      orbital_distance_m=None, **kwargs):
+        def _new_init(
+            self,
+            *args,
+            interior=None,
+            star_context=None,
+            orbital_distance_m=None,
+            **kwargs,
+        ):
             _orig_init(self, *args, **kwargs)
-            self.interior             = interior
-            self.star_context         = star_context
-            self.orbital_distance_m   = orbital_distance_m
+            self.interior = interior
+            self.star_context = star_context
+            self.orbital_distance_m = orbital_distance_m
 
         Planet.__init__ = _new_init
 
@@ -339,8 +388,8 @@ def _attach_interior_and_star():
             return self.interior.surface_magnetic_field_T(self.radius, self.mass)
         # Fallback: map enum to approximate B
         _B_MAP = {
-            MagneticFieldStrength.NONE:   0.0,
-            MagneticFieldStrength.WEAK:   3e-6,
+            MagneticFieldStrength.NONE: 0.0,
+            MagneticFieldStrength.WEAK: 3e-6,
             MagneticFieldStrength.MEDIUM: 3e-5,
             MagneticFieldStrength.STRONG: 4e-4,
         }
@@ -420,15 +469,15 @@ def _attach_interior_and_star():
 
     # Attach methods
     Planet._sync_rotation_to_interior = _sync_rotation_to_interior
-    Planet.derived_J2                = derived_J2
-    Planet.derived_magnetic_field_T  = derived_magnetic_field_T
-    Planet.derived_heat_flux         = derived_heat_flux
-    Planet.derived_MoI               = derived_MoI
-    Planet.equilibrium_temperature   = equilibrium_temperature
-    Planet.in_habitable_zone         = in_habitable_zone
-    Planet.stellar_flux              = stellar_flux
-    Planet.xuv_flux                  = xuv_flux
-    Planet.is_tidally_locked         = is_tidally_locked
+    Planet.derived_J2 = derived_J2
+    Planet.derived_magnetic_field_T = derived_magnetic_field_T
+    Planet.derived_heat_flux = derived_heat_flux
+    Planet.derived_MoI = derived_MoI
+    Planet.equilibrium_temperature = equilibrium_temperature
+    Planet.in_habitable_zone = in_habitable_zone
+    Planet.stellar_flux = stellar_flux
+    Planet.xuv_flux = xuv_flux
+    Planet.is_tidally_locked = is_tidally_locked
 
     # ── Extended summary ──────────────────────────────────────────────────────
     _orig_summary = Planet.summary
@@ -438,7 +487,7 @@ def _attach_interior_and_star():
         extra = []
 
         if self.interior and self.interior.enabled:
-            B  = self.derived_magnetic_field_T()
+            B = self.derived_magnetic_field_T()
             hf = self.derived_heat_flux()
             MoI = self.derived_MoI()
             J2_d = self.derived_J2()
@@ -446,25 +495,26 @@ def _attach_interior_and_star():
                 f"  ── Interior (derived) ──",
                 f"  MoI factor         : {MoI:.4f}  (uniform=0.400, Earth=0.331)",
                 f"  J2 (derived)       : {J2_d:.4e}",
-                f"  Surface B-field    : {B*1e6:.1f} μT  ({B:.2e} T)",
-                f"  Radiogenic flux    : {hf*1000:.2f} mW/m²",
+                f"  Surface B-field    : {B * 1e6:.1f} μT  ({B:.2e} T)",
+                f"  Radiogenic flux    : {hf * 1000:.2f} mW/m²",
                 self.interior.layer_summary(self.radius, self.mass),
             ]
 
         if self.star_context and self.orbital_distance_m:
             from core.star import AU
+
             T_eq = self.equilibrium_temperature()
             in_hz = self.in_habitable_zone()
-            hz_f  = self.star_context.hz_fraction(self.orbital_distance_m)
+            hz_f = self.star_context.hz_fraction(self.orbital_distance_m)
             extra += [
                 f"  ── Stellar context ──",
                 f"  Star               : {self.star_context.name}  "
-                    f"({self.star_context.spectral_type.name})",
-                f"  Orbital distance   : {self.orbital_distance_m/AU:.3f} AU",
+                f"({self.star_context.spectral_type.name})",
+                f"  Orbital distance   : {self.orbital_distance_m / AU:.3f} AU",
                 f"  Stellar flux       : {self.stellar_flux():.1f} W/m²",
                 f"  Equilibrium temp   : {T_eq:.1f} K",
                 f"  In habitable zone  : {'YES' if in_hz else 'NO'}  "
-                    f"(HZ fraction={hz_f:.2f})",
+                f"(HZ fraction={hz_f:.2f})",
                 f"  Tidally locked     : {'YES' if self.is_tidally_locked() else 'NO'}",
                 f"  XUV flux           : {self.xuv_flux():.3e} W/m²",
             ]
