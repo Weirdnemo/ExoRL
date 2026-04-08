@@ -6,7 +6,7 @@ results can be exactly reproduced.
 
 Usage
 -----
-    from planet_rl.core.planet_io import planet_to_json, planet_from_json, planet_fingerprint
+    from exorl.core.planet_io import planet_to_json, planet_from_json, planet_fingerprint
 
     # Save a planet
     json_str = planet_to_json(planet)
@@ -93,7 +93,7 @@ def _resolve_enum(parent_cls, field_name: str, val):
     if not isinstance(val, str):
         return val
     try:
-        import planet_rl.core.planet as _pm
+        import exorl.core.planet as _pm
 
         field_obj = {f.name: f for f in dataclasses.fields(parent_cls)}.get(field_name)
         if field_obj is None:
@@ -124,7 +124,7 @@ def planet_to_dict(planet) -> dict:
     orbital_distance_m are runtime-attached and not part of the canonical
     definition. Regenerate them after loading.
     """
-    from planet_rl.core.planet import Planet
+    from exorl.core.planet import Planet
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -170,7 +170,7 @@ def planet_from_dict(d: dict):
     """
     Restore a Planet from a dict (as returned by planet_to_dict or parsed JSON).
     """
-    from planet_rl.core.planet import (
+    from exorl.core.planet import (
         AtmosphereComposition,
         AtmosphereConfig,
         MagneticFieldConfig,
@@ -302,7 +302,7 @@ def load_planet(path: str):
 
 
 def _patch_planet():
-    from planet_rl.core.planet import Planet
+    from exorl.core.planet import Planet
 
     def to_json(self, indent=2) -> str:
         """Serialise this planet to a JSON string. See planet_io.planet_to_json."""

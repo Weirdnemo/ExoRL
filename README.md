@@ -1,6 +1,6 @@
-# Planet-RL
+# ExoRL
 
-Planet-RL is a planetary science simulation and reinforcement learning toolkit. It models planets from the inside out — interior structure, atmosphere, climate, habitability, orbital mechanics, and observational signatures — and connects all of that physics to trainable RL environments for spacecraft mission design.
+ExoRL is a planetary science simulation and reinforcement learning toolkit. It models planets from the inside out — interior structure, atmosphere, climate, habitability, orbital mechanics, and observational signatures — and connects all of that physics to trainable RL environments for spacecraft mission design.
 
 The core idea is physical consistency. The J2 oblateness your agent fights during orbital insertion is derived from the same interior model that determines the planet's magnetic field. The atmospheric drag comes from a multi-layer atmosphere whose greenhouse warming uses the same CO₂ pressure the habitability scorer reads. Every number follows from the physics, not from convenience.
 
@@ -17,7 +17,7 @@ If you want guided walkthroughs:
 
 ### Dependencies / Installation
 
-Planet-RL is a Python project. The reinforcement-learning scripts additionally rely on:
+ExoRL is a Python project. The reinforcement-learning scripts additionally rely on:
 
 - `gymnasium` (Gym API)
 - `torch` (policy networks)
@@ -36,22 +36,38 @@ pip install -e .
 pip install -e ".[rl]"
 ```
 
+### Releasing to PyPI (maintainers)
+
+This repo is set up for **Trusted Publishing** to PyPI via GitHub Actions.
+
+- **Trigger**: push a version tag like `v0.1.1`
+- **Workflow**: `.github/workflows/workflow.yml` builds and publishes automatically
+
+Typical release:
+
+```bash
+# 1) bump version in pyproject.toml
+# 2) commit the version bump
+git tag v0.1.1
+git push --tags
+```
+
 ### CLI shortcuts
 
 If you install the project (editable or not), you also get a small convenience CLI that wraps the scripts:
 
 ```bash
-planet-rl generate-demos --episodes 200 --presets-only --out demos/demos_200.npz
-planet-rl pretrain-bc --demos demos/demos_200.npz --out bc_model_200
-planet-rl train-sac --mode fixed --planet earth --steps 20000 --tag quick
-planet-rl eval-generalisation --model training_runs/<run_name>/model_final.zip
+exorl generate-demos --episodes 200 --presets-only --out demos/demos_200.npz
+exorl pretrain-bc --demos demos/demos_200.npz --out bc_model_200
+exorl train-sac --mode fixed --planet earth --steps 20000 --tag quick
+exorl eval-generalisation --model training_runs/<run_name>/model_final.zip
 ```
 
 You can also run the same commands as modules:
 
 ```bash
-python -m planet_rl.commands.generate_demos --help
-python -m planet_rl.commands.train_sac --help
+python -m exorl.commands.generate_demos --help
+python -m exorl.commands.train_sac --help
 ```
 
 ### Quickstart: run a small experiment (SAC with BC warmstart)
@@ -191,7 +207,7 @@ After running the quickstart steps, you should see:
 
 Planet-RL provides multiple `gymnasium.Env`-style environments. The primary training target for the scripts above is:
 
-#### `OrbitalInsertionEnv` (`planet_rl/core/env.py`)
+#### `OrbitalInsertionEnv` (`exorl/core/env.py`)
 
 - Observation: `obs_dim` floats
   - default: `obs_dim=18` (science stack enabled)
@@ -208,7 +224,7 @@ Planet-RL provides multiple `gymnasium.Env`-style environments. The primary trai
   - escape: radius becomes too large for the capture problem
   - timeout / no fuel: `max_steps` or fuel < 1 kg
 
-#### `InterplanetaryEnv` (`planet_rl/core/interplanetary_env.py`)
+#### `InterplanetaryEnv` (`exorl/core/interplanetary_env.py`)
 
 - Observation: 28 floats
 - Action: 4 continuous floats in `[-1, 1]`
@@ -217,7 +233,7 @@ Planet-RL provides multiple `gymnasium.Env`-style environments. The primary trai
   - `cruise`: one step ~= one simulated day until target SOI entry
   - `capture`: switches to the same orbital insertion physics as `OrbitalInsertionEnv`
 
-#### `ScienceOpsEnv` (`planet_rl/core/science_ops_env.py`)
+#### `ScienceOpsEnv` (`exorl/core/science_ops_env.py`)
 
 - Observation: 16 floats
 - Action: 4 continuous floats in `[-1, 1]`
@@ -272,7 +288,7 @@ Everything after `## Contents` is the “reference background” for the simulat
 The `Planet` object is the central data structure that every other module operates on. It holds physical properties and exposes derived quantities as methods.
 
 ```python
-from planet_rl.core.generator import PRESETS
+from exorl.core.generator import PRESETS
 
 earth = PRESETS["earth"]()
 
@@ -293,7 +309,7 @@ Two ways to get planets: use a named preset, or generate one procedurally.
 **Presets** — five solar system analogues with calibrated properties:
 
 ```python
-from planet_rl.core.generator import PRESETS
+from exorl.core.generator import PRESETS
 
 earth = PRESETS["earth"]()
 mars  = PRESETS["mars"]()
@@ -309,7 +325,7 @@ Each preset carries its atmosphere, J2 coefficient, magnetic field, moon count, 
 **Random generation** — the generator produces planets across 0.1–4× Earth radius and 0.003–100× Earth mass, with randomised atmosphere composition, oblateness, magnetic dipole, and moon count that are all physically consistent with the planet's size and density:
 
 ```python
-from planet_rl.core.generator import PlanetGenerator
+from exorl.core.generator import PlanetGenerator
 
 gen = PlanetGenerator(seed=42)
 
@@ -347,7 +363,7 @@ The generator spans a wide enough range that agents trained on random planets en
 Attaching an interior model lets the planet derive J2, magnetic field, heat flux, and moment of inertia from its bulk density rather than using hand-set values.
 
 ```python
-from planet_rl.core.interior import interior_from_bulk_density
+from exorl.core.interior import interior_from_bulk_density
 
 planet.interior = interior_from_bulk_density(planet.mean_density)
 
@@ -370,7 +386,7 @@ The figure shows J2, surface magnetic field, heat flux, and moment of inertia fa
 Seven stellar presets from M to G spectral type. Attaching a star to a planet enables habitable zone placement, climate calculations, and habitability scoring.
 
 ```python
-from planet_rl.core.star import star_sun, STAR_PRESETS
+from exorl.core.star import star_sun, STAR_PRESETS
 
 sun      = star_sun()
 proxima  = STAR_PRESETS["proxima"]()
@@ -402,7 +418,7 @@ The habitable zones span very different physical scales — TRAPPIST-1's HZ sits
 The spacecraft dynamics engine. An RK4 integrator propagates a `SpacecraftState` under gravity (including J2), thrust, and aerodynamic drag. This is what `env.py` and `interplanetary_env.py` use internally.
 
 ```python
-from planet_rl.core.physics import SpacecraftState, OrbitalIntegrator, ThrusterConfig, AeroConfig
+from exorl.core.physics import SpacecraftState, OrbitalIntegrator, ThrusterConfig, AeroConfig
 
 state = SpacecraftState(
     x=planet.radius + 400_000, y=0, z=0,
@@ -437,7 +453,7 @@ The integrator calls `planet.gravity_vector_J2()` at each substep, so J2 perturb
 Multi-layer atmosphere model with temperature-dependent density profiles, Jeans thermal escape, and greenhouse forcing.
 
 ```python
-from planet_rl.core.atmosphere_science import MultiLayerAtmosphere, analyse_atmosphere
+from exorl.core.atmosphere_science import MultiLayerAtmosphere, analyse_atmosphere
 
 # Build layered atmosphere
 atm = MultiLayerAtmosphere.from_atmosphere_config(planet.atmosphere, planet)
@@ -469,7 +485,7 @@ The atmosphere profiles shown above are for Earth, Mars, Venus, Moon (no atmosph
 A 1D energy balance model (EBM) that finds stable surface temperatures including ice-albedo feedback and the carbonate-silicate thermostat. This connects to the habitability scorer and to the RL reward signal.
 
 ```python
-from planet_rl.core.climate import EnergyBalanceModel, find_bifurcation_points
+from exorl.core.climate import EnergyBalanceModel, find_bifurcation_points
 
 ebm = EnergyBalanceModel(planet, star)
 
@@ -500,7 +516,7 @@ Calibration: Earth → 288 K ✓, Mars → snowball ✓, Venus → runaway green
 Scores a planet on ten factors and returns a 0–1 composite score, an A–F grade, and a written assessment.
 
 ```python
-from planet_rl.core.habitability import assess_habitability
+from exorl.core.habitability import assess_habitability
 
 # Requires star and orbital distance attached to the planet
 ha = assess_habitability(planet, sun, 1.496e11)
@@ -525,7 +541,7 @@ The radar charts show how each factor contributes to the overall score. Earth is
 J2-driven secular perturbations, sun-synchronous orbit design, frozen orbit eccentricity, atmospheric drag lifetime, and station-keeping budgets.
 
 ```python
-from planet_rl.core.orbital_analysis import (
+from exorl.core.orbital_analysis import (
     J2Perturbations, SunSynchronousOrbit, FrozenOrbit, AtmosphericDrag
 )
 import math
@@ -563,7 +579,7 @@ The frozen orbit eccentricity feeds directly into the RL reward function in `env
 Sub-satellite ground track, coverage maps, and pass times over ground targets.
 
 ```python
-from planet_rl.core.ground_track import GroundTrack, CoverageMap
+from exorl.core.ground_track import GroundTrack, CoverageMap
 
 gt         = GroundTrack(planet, alt=500_000, inc=math.radians(98))
 lats, lons = gt.compute(n_orbits=1)
@@ -587,7 +603,7 @@ next_pass = gt.next_pass(lat=35.0, lon=135.0, from_time=0)
 Insolation maps, surface temperature distributions across seasons, and polar ice extent as a function of orbital parameters.
 
 ```python
-from planet_rl.core.surface_energy import SurfaceEnergyMap
+from exorl.core.surface_energy import SurfaceEnergyMap
 
 sem    = SurfaceEnergyMap(planet, sun)
 flux   = sem.insolation_at(lat=45.0, lon=0.0, day_of_year=172)  # W/m²
@@ -604,7 +620,7 @@ ice_lat = sem.polar_ice_latitude()              # degrees
 Tidal heating rate, locking timescale, Roche limit, and orbital migration rate.
 
 ```python
-from planet_rl.core.tidal import TidalModel
+from exorl.core.tidal import TidalModel
 
 tidal   = TidalModel(planet, star)
 heating = tidal.surface_heating_rate()                    # W/m²
@@ -625,7 +641,7 @@ Tidal locking status feeds into the habitability scorer. A tidally locked planet
 What the planet looks like to a telescope — transit depth, radial velocity semi-amplitude, transmission spectroscopy metric (TSM), and a basic transmission spectrum.
 
 ```python
-from planet_rl.core.observation import (
+from exorl.core.observation import (
     transit_depth_ppm, rv_semi_amplitude,
     transmission_spectroscopy_metric, characterise_observations,
 )
@@ -657,7 +673,7 @@ Calibration: Earth transit depth 83.9 ppm (literature: 84), Earth RV 0.089 m/s (
 Delta-V budgets, aerobraking corridor analysis, and mission-level planning utilities.
 
 ```python
-from planet_rl.core.mission import MissionDesign, AerobrakingCorridor
+from exorl.core.mission import MissionDesign, AerobrakingCorridor
 
 G  = 6.674e-11
 md = MissionDesign(planet, G*planet.mass)
@@ -680,7 +696,7 @@ alt_min, alt_max = corridor.safe_altitude_range(v_entry=6000.0, heat_limit=1e7)
 Lambert solver, Kepler propagator, and heliocentric integrator for interplanetary trajectory calculations.
 
 ```python
-from planet_rl.core.heliocentric import LambertSolver, KeplerPropagator, planet_state, MU_SUN, AU
+from exorl.core.heliocentric import LambertSolver, KeplerPropagator, planet_state, MU_SUN, AU
 import numpy as np
 
 solver = LambertSolver(MU_SUN)
@@ -714,7 +730,7 @@ The arc is coloured by spacecraft speed — fast near perihelion (bright yellow)
 Sphere of influence radius, frame transforms between heliocentric and planet-centred coordinates, and hyperbolic approach/departure geometry.
 
 ```python
-from planet_rl.core.soi import (
+from exorl.core.soi import (
     SphereOfInfluence, HyperbolicDeparture,
     HyperbolicArrival, patched_conic_budget
 )
@@ -754,7 +770,7 @@ print(budget["dv_total_m_s"])   # ~5960 m/s for Earth→Mars
 Porkchop grid computation, optimal window selection, and the RL decision space interface.
 
 ```python
-from planet_rl.core.launch_window import PorkchopData, LaunchDecisionSpace, AU
+from exorl.core.launch_window import PorkchopData, LaunchDecisionSpace, AU
 import numpy as np
 
 # Compute the porkchop grid
@@ -797,7 +813,7 @@ The dashboard combines the heliocentric transfer arc (top left), C3 porkchop (to
 Generates a large population of planets and computes summary statistics, composition classification, habitability distribution, and property correlations.
 
 ```python
-from planet_rl.core.population import PlanetPopulation
+from exorl.core.population import PlanetPopulation
 
 pop = PlanetPopulation.generate(n=500, seed=42, verbose=True)
 pop.save("population_500.csv")
@@ -841,7 +857,7 @@ Strong correlations to note: mass and radius (r=0.89, expected), B-field and mas
 Single-planet orbital insertion. The agent fires burns to slow a spacecraft from a hyperbolic approach into a stable circular orbit at the target altitude. The environment is wired directly to the science stack — J2 comes from the interior model, drag comes from the multi-layer atmosphere, and the reward includes a habitability-weighted science bonus.
 
 ```python
-from planet_rl.core.env import OrbitalInsertionEnv
+from exorl.core.env import OrbitalInsertionEnv
 
 env = OrbitalInsertionEnv(
     planet_preset  = "earth",    # or randomize_planet=True for training
@@ -894,7 +910,7 @@ env = OrbitalInsertionEnv(
 Full planet-to-planet mission in a single episode across three sequential phases: launch window selection, heliocentric cruise, and capture orbit insertion. Each phase uses the correct underlying physics.
 
 ```python
-from planet_rl.core.interplanetary_env import InterplanetaryEnv
+from exorl.core.interplanetary_env import InterplanetaryEnv
 import numpy as np
 
 env = InterplanetaryEnv(
@@ -955,12 +971,12 @@ Identical physics to `OrbitalInsertionEnv`. The agent fires retrograde burns to 
 
 ## 7. Visualisation
 
-### `planet_rl/visualization/visualizer.py`
+### `exorl/visualization/visualizer.py`
 
 All plot functions follow the same style — white background, Wong colour palette, no decorative elements, publication-quality at 300 DPI.
 
 ```python
-from planet_rl.visualization.visualizer import (
+from exorl.visualization.visualizer import (
     plot_planet_cross_section,
     plot_atmosphere_profile,
     plot_heliocentric_transfer,
@@ -1044,7 +1060,7 @@ python examples/transfer_viz_demo.py
   - training artifacts under `training_runs/`
 
 ### Visualization import errors
-- If you see import errors here, verify `matplotlib` is installed (it is part of the base dependencies) and that you are importing from `planet_rl.visualization`.
+- If you see import errors here, verify `matplotlib` is installed (it is part of the base dependencies) and that you are importing from `exorl.visualization`.
 
 ### “File not found” for evaluation
 - `eval_generalisation.py` expects a path to the trained SB3 model zip:

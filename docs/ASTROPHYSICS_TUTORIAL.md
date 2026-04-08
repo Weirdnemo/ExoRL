@@ -27,7 +27,7 @@ pip install -e .
 
 If you plan to run the plotting-heavy demos, make sure `matplotlib` is installed (it is part of the base dependencies).
 
-> Note: the RL environments live in `planet_rl/core/env.py`, `planet_rl/core/interplanetary_env.py`, and `planet_rl/core/science_ops_env.py`, but this doc focuses on the astrophysics/planet-science modules.
+> Note: the RL environments live in `exorl/core/env.py`, `exorl/core/interplanetary_env.py`, and `exorl/core/science_ops_env.py`, but this doc focuses on the astrophysics/planet-science modules.
 
 ---
 
@@ -146,7 +146,7 @@ Example outputs:
 
 ## 5a) “Core module map” (where the science lives)
 
-The main science APIs live under `planet_rl/core/`. A quick mental map:
+The main science APIs live under `exorl/core/`. A quick mental map:
 
 - **`planet.py` / `generator.py`**: planet data model + presets + procedural generation
   - Key API: `Planet`, `PRESETS`, `PlanetGenerator`
@@ -179,14 +179,14 @@ The main science APIs live under `planet_rl/core/`. A quick mental map:
   - **`launch_window.py`**: porkchop / launch-window helpers
   - **`mission.py`**: ΔV budgets, aerobraking planning, gravity assists, porkchop grids
 
-Tip: `planet_rl/core/__init__.py` re-exports most of these, so `from planet_rl.core import ...` works for many top-level names.
+Tip: `exorl/core/__init__.py` re-exports most of these, so `from exorl.core import ...` works for many top-level names.
 
 ---
 
 ### Create planets (presets + random)
 
 ```python
-from planet_rl.core.generator import PRESETS, PlanetGenerator
+from exorl.core.generator import PRESETS, PlanetGenerator
 
 earth = PRESETS["earth"]()
 gen = PlanetGenerator(seed=0)
@@ -198,8 +198,8 @@ print(rand.summary())
 ### Atmosphere analysis (multi-layer, greenhouse, escape)
 
 ```python
-from planet_rl.core.atmosphere_science import analyse_atmosphere
-from planet_rl.core.generator import PRESETS
+from exorl.core.atmosphere_science import analyse_atmosphere
+from exorl.core.generator import PRESETS
 
 earth = PRESETS["earth"]()
 res = analyse_atmosphere(earth)
@@ -209,8 +209,8 @@ print(res["surface_temp_K"], res["scale_height_km"])
 ### Habitability scoring
 
 ```python
-from planet_rl.core.habitability import assess_habitability
-from planet_rl.core.generator import PRESETS
+from exorl.core.habitability import assess_habitability
+from exorl.core.generator import PRESETS
 
 earth = PRESETS["earth"]()
 hab = assess_habitability(earth)
@@ -224,8 +224,8 @@ print(hab["score"], hab["class"])
 ### Exoplanet observables (transit + RV + TSM)
 
 ```python
-from planet_rl.core import PRESETS, star_sun, AU
-from planet_rl.core.observation import characterise_observations
+from exorl.core import PRESETS, star_sun, AU
+from exorl.core.observation import characterise_observations
 
 earth = PRESETS["earth"]()
 sun = star_sun()
@@ -241,8 +241,8 @@ print(sig.report())
 ### Climate EBM: snowball vs runaway thresholds
 
 ```python
-from planet_rl.core import PRESETS, star_sun, AU
-from planet_rl.core.climate import EnergyBalanceModel, find_bifurcation_points
+from exorl.core import PRESETS, star_sun, AU
+from exorl.core.climate import EnergyBalanceModel, find_bifurcation_points
 
 p = PRESETS["earth"]()
 s = star_sun()
@@ -258,8 +258,8 @@ print(bif)
 ### Orbit design: sun-synchronous inclination + J2 precession rates
 
 ```python
-from planet_rl.core import PRESETS
-from planet_rl.core.orbital_analysis import J2Analysis, SunSynchronousOrbit, semi_major_axis_from_altitude
+from exorl.core import PRESETS
+from exorl.core.orbital_analysis import J2Analysis, SunSynchronousOrbit, semi_major_axis_from_altitude
 
 p = PRESETS["earth"]()
 alt_km = 600
@@ -272,8 +272,8 @@ print(summary)
 ### Ground track + coverage map (science operations)
 
 ```python
-from planet_rl.core import PRESETS
-from planet_rl.core.ground_track import propagate_ground_track, compute_coverage_map
+from exorl.core import PRESETS
+from exorl.core.ground_track import propagate_ground_track, compute_coverage_map
 
 p = PRESETS["earth"]()
 track = propagate_ground_track(p, altitude_m=500e3, inclination_deg=98.0, duration_s=2*86400)
@@ -285,8 +285,8 @@ print("coverage_fraction =", cov.coverage_fraction())
 
 ```python
 import numpy as np
-from planet_rl.core import AU, star_sun
-from planet_rl.core.heliocentric import LambertSolver, planet_state, transfer_summary
+from exorl.core import AU, star_sun
+from exorl.core.heliocentric import LambertSolver, planet_state, transfer_summary
 
 sun = star_sun()
 solver = LambertSolver(sun.mu)
@@ -313,7 +313,7 @@ print(transfer_summary(r1, r2, v1_sc, v2_sc, v1p, v2p))
   - The demos write to paths like `figures/planet_figures/` and `figures/science_figures/` relative to the repo root.
 
 - **Import errors for plotting**:
-  - Ensure you’re importing from `planet_rl.visualization` and that `matplotlib` is installed in your environment.
+  - Ensure you’re importing from `exorl.visualization` and that `matplotlib` is installed in your environment.
 
 - **Broken image links in this tutorial**:
   - The images in this doc are expected outputs. If they don’t exist yet, run the corresponding `examples/*_demo.py` scripts above to generate them.

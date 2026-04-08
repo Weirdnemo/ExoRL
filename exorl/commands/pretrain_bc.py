@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-import planet_rl.core.planet_io
+import exorl.core.planet_io
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -137,7 +137,7 @@ def main(argv: list[str] | None = None) -> None:
     # Export as SB3-compatible zip by creating a SAC model and copying the actor.
     from gymnasium import spaces
     from stable_baselines3.common.vec_env import DummyVecEnv
-    from planet_rl.core.env import OrbitalInsertionEnv
+    from exorl.core.env import OrbitalInsertionEnv
 
     def _make():
         return OrbitalInsertionEnv(

@@ -53,7 +53,7 @@ Reward
 
 Usage
 -----
-    from planet_rl.core.science_ops_env import ScienceOpsEnv
+    from exorl.core.science_ops_env import ScienceOpsEnv
 
     env = ScienceOpsEnv(planet_preset="mars")
     obs, info = env.reset()
@@ -217,9 +217,9 @@ class ScienceOpsEnv(gym.Env if GYM_OK else object):
     # ── Planet loading ─────────────────────────────────────────────────────────
 
     def _load_planet(self):
-        from planet_rl.core.generator import PRESETS, PlanetGenerator
-        from planet_rl.core.interior import interior_from_bulk_density
-        from planet_rl.core.star import star_sun
+        from exorl.core.generator import PRESETS, PlanetGenerator
+        from exorl.core.interior import interior_from_bulk_density
+        from exorl.core.star import star_sun
 
         if self.randomize_planet:
             gen = PlanetGenerator(seed=self.generator_seed + self._episode_count)
@@ -241,7 +241,7 @@ class ScienceOpsEnv(gym.Env if GYM_OK else object):
     def _compute_hab_tsm(self):
         """Pre-compute habitability score and TSM for this planet."""
         try:
-            from planet_rl.core.habitability import assess_habitability
+            from exorl.core.habitability import assess_habitability
 
             ha = assess_habitability(
                 self._planet, self._planet.star_context, self._planet.orbital_distance_m
@@ -251,7 +251,7 @@ class ScienceOpsEnv(gym.Env if GYM_OK else object):
             self._hab_score = 0.3
 
         try:
-            from planet_rl.core.observation import transmission_spectroscopy_metric
+            from exorl.core.observation import transmission_spectroscopy_metric
 
             tsm = transmission_spectroscopy_metric(
                 self._planet, self._planet.star_context, self._planet.orbital_distance_m
@@ -262,8 +262,8 @@ class ScienceOpsEnv(gym.Env if GYM_OK else object):
 
     def _build_resource_models(self):
         """Build power and comms models for current orbit."""
-        from planet_rl.core.comms import AntennaConfig, CommsModel
-        from planet_rl.core.power import PowerModel, SolarPanelConfig
+        from exorl.core.comms import AntennaConfig, CommsModel
+        from exorl.core.power import PowerModel, SolarPanelConfig
 
         panel = SolarPanelConfig(area_m2=self.panel_area, efficiency=0.28)
         self._power_model = PowerModel(

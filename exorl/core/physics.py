@@ -11,7 +11,7 @@ from typing import Optional
 
 import numpy as np
 
-from planet_rl.core.planet import Planet
+from exorl.core.planet import Planet
 
 
 # ── Spacecraft state ──────────────────────────────────────────────────────────

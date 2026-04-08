@@ -1,20 +1,20 @@
-from planet_rl.core.env import OrbitalInsertionEnv
-from planet_rl.core.generator import PRESETS, PlanetGenerator
-from planet_rl.core.interior import (
+from exorl.core.env import OrbitalInsertionEnv
+from exorl.core.generator import PRESETS, PlanetGenerator
+from exorl.core.interior import (
     MATERIAL_DENSITY,
     ConvectionState,
     InteriorConfig,
     InteriorLayer,
     interior_from_bulk_density,
 )
-from planet_rl.core.physics import (
+from exorl.core.physics import (
     AeroConfig,
     OrbitalIntegrator,
     SpacecraftState,
     ThrusterConfig,
     state_to_orbital_elements,
 )
-from planet_rl.core.planet import (
+from exorl.core.planet import (
     M_EARTH,
     R_EARTH,
     AtmosphereComposition,
@@ -28,7 +28,7 @@ from planet_rl.core.planet import (
     TerrainConfig,
     TerrainType,
 )
-from planet_rl.core.star import (
+from exorl.core.star import (
     AU,
     STAR_PRESETS,
     SpectralType,
@@ -82,8 +82,8 @@ __all__ = [
 ]
 
 # ── Step 2: Atmosphere science + Habitability ─────────────────────────────────
-import planet_rl.core.planet_io  # triggers Planet.to_json / .from_json / .fingerprint patch
-from planet_rl.core.atmosphere_science import (
+import exorl.core.planet_io  # triggers Planet.to_json / .from_json / .fingerprint patch
+from exorl.core.atmosphere_science import (
     MOLAR_MASS,
     STANDARD_COMPOSITIONS,
     AtmosphericLayer,
@@ -92,7 +92,7 @@ from planet_rl.core.atmosphere_science import (
     MultiLayerAtmosphere,
     analyse_atmosphere,
 )
-from planet_rl.core.climate import (
+from exorl.core.climate import (
     BifurcationPoints,
     ClimateResult,
     ClimateState,
@@ -103,8 +103,8 @@ from planet_rl.core.climate import (
 )
 
 # ── Geology and tectonic regime ───────────────────────────────────────────────
-from planet_rl.core.geology import GeologyModel, TectonicRegime
-from planet_rl.core.ground_track import (
+from exorl.core.geology import GeologyModel, TectonicRegime
+from exorl.core.ground_track import (
     CoverageMap,
     GroundTrackPoint,
     compute_coverage_map,
@@ -114,7 +114,7 @@ from planet_rl.core.ground_track import (
     propagate_ground_track,
     time_to_full_coverage_days,
 )
-from planet_rl.core.habitability import (
+from exorl.core.habitability import (
     HabitabilityAssessment,
     assess_habitability,
     composition_class,
@@ -122,7 +122,7 @@ from planet_rl.core.habitability import (
 )
 
 # ── Phase 1: Interplanetary physics ──────────────────────────────────────────
-from planet_rl.core.heliocentric import (
+from exorl.core.heliocentric import (
     MU_SUN,
     HeliocentricIntegrator,
     HelioState,
@@ -134,11 +134,11 @@ from planet_rl.core.heliocentric import (
 )
 
 # ── Interplanetary RL environment ─────────────────────────────────────────────
-from planet_rl.core.interplanetary_env import InterplanetaryEnv, MissionConfig
+from exorl.core.interplanetary_env import InterplanetaryEnv, MissionConfig
 
 # ── Reference exoplanet catalog ───────────────────────────────────────────────
-from planet_rl.core.kepler_catalog import KeplerCatalog
-from planet_rl.core.launch_window import (
+from exorl.core.kepler_catalog import KeplerCatalog
+from exorl.core.launch_window import (
     LaunchDecisionSpace,
     LaunchWindow,
     PorkchopData,
@@ -146,7 +146,7 @@ from planet_rl.core.launch_window import (
     orbital_period_days,
     synodic_period_days,
 )
-from planet_rl.core.mission import (
+from exorl.core.mission import (
     AerobrakingCampaign,
     AerobrakingPass,
     DeltaVBudget,
@@ -157,7 +157,7 @@ from planet_rl.core.mission import (
     plan_aerobraking,
     porkchop_data,
 )
-from planet_rl.core.observation import (
+from exorl.core.observation import (
     TransitSignal,
     atmospheric_scale_height,
     characterise_observations,
@@ -171,7 +171,7 @@ from planet_rl.core.observation import (
 )
 
 # ── Steps 3-5: Orbital, Ground Track, Surface Energy, Tidal, Mission ─────────
-from planet_rl.core.orbital_analysis import (
+from exorl.core.orbital_analysis import (
     DragLifetime,
     FrozenOrbit,
     J2Analysis,
@@ -185,14 +185,14 @@ from planet_rl.core.orbital_analysis import (
 )
 
 # ── Planet I/O and serialisation ─────────────────────────────────────────────
-from planet_rl.core.planet_io import (
+from exorl.core.planet_io import (
     load_planet,
     planet_fingerprint,
     planet_from_json,
     planet_to_json,
     save_planet,
 )
-from planet_rl.core.soi import (
+from exorl.core.soi import (
     HyperbolicArrival,
     HyperbolicDeparture,
     HyperbolicOrbit,
@@ -204,7 +204,7 @@ from planet_rl.core.soi import (
     laplace_soi_radius,
     patched_conic_budget,
 )
-from planet_rl.core.surface_energy import (
+from exorl.core.surface_energy import (
     InsolationMap,
     TemperatureMap,
     compute_insolation_map,
@@ -212,7 +212,7 @@ from planet_rl.core.surface_energy import (
     permanent_shadow_latitude_deg,
     surface_energy_balance,
 )
-from planet_rl.core.tidal import (
+from exorl.core.tidal import (
     OrbitalMigration,
     RocheLimit,
     TidalAnalysis,

@@ -23,7 +23,7 @@ needed for first-order mission design.
 
 Usage
 -----
-    from planet_rl.core.heliocentric import (
+    from exorl.core.heliocentric import (
         LambertSolver, KeplerPropagator, HeliocentricIntegrator,
         planet_state, transfer_summary,
     )

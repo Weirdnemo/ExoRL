@@ -31,7 +31,7 @@ import numpy as np
 from matplotlib.patches import FancyArrowPatch
 
 # ── science imports ───────────────────────────────────────────────────────────
-from planet_rl.core import (
+from exorl.core import (
     AU,
     PRESETS,
     STAR_PRESETS,
@@ -49,31 +49,31 @@ from planet_rl.core import (
     star_tau_ceti,
     star_trappist1,
 )
-from planet_rl.core.atmosphere_science import (
+from exorl.core.atmosphere_science import (
     STANDARD_COMPOSITIONS,
     GreenhouseModel,
     JeansEscape,
     MultiLayerAtmosphere,
     analyse_atmosphere,
 )
-from planet_rl.core.ground_track import (
+from exorl.core.ground_track import (
     compute_coverage_map,
     find_passes,
     propagate_ground_track,
 )
-from planet_rl.core.habitability import (
+from exorl.core.habitability import (
     assess_habitability,
     composition_class,
     size_class,
 )
-from planet_rl.core.mission import (
+from exorl.core.mission import (
     GravityAssist,
     build_mission_dv_budget,
     orbital_insertion_dv,
     plan_aerobraking,
     porkchop_data,
 )
-from planet_rl.core.orbital_analysis import (
+from exorl.core.orbital_analysis import (
     DragLifetime,
     FrozenOrbit,
     J2Analysis,
@@ -84,19 +84,19 @@ from planet_rl.core.orbital_analysis import (
     circular_speed,
     orbital_period,
 )
-from planet_rl.core.surface_energy import (
+from exorl.core.surface_energy import (
     compute_insolation_map,
     compute_temperature_map,
     permanent_shadow_latitude_deg,
     surface_energy_balance,
 )
-from planet_rl.core.tidal import (
+from exorl.core.tidal import (
     RocheLimit,
     TidalHeating,
     TidalLocking,
     analyse_tidal,
 )
-from planet_rl.visualization import (
+from exorl.visualization import (
     FA,
     FG,
     FK,
@@ -118,7 +118,7 @@ from planet_rl.visualization import (
     plot_planet_cross_section,
     save_figure,
 )
-from planet_rl.visualization.visualizer import _ax
+from exorl.visualization.visualizer import _ax
 
 # ── output directory ──────────────────────────────────────────────────────────
 OUT = "figures/science_figures"
@@ -1248,7 +1248,7 @@ ax.tick_params(labelsize=FK)
 # (f) Porkchop: C3 vs departure/arrival date using Lambert solver
 ax = axes10[1, 2]
 _ax(ax)
-from planet_rl.core.launch_window import PorkchopData as _PC
+from exorl.core.launch_window import PorkchopData as _PC
 
 _r_e = 1.0 * AU
 _r_m = 1.524 * AU

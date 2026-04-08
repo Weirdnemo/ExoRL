@@ -6,8 +6,8 @@ import sys
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="planet-rl",
-        description="Planet-RL convenience CLI.",
+        prog="exorl",
+        description="ExoRL convenience CLI.",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -34,22 +34,22 @@ def main(argv: list[str] | None = None) -> None:
         raise SystemExit(0)
 
     if cmd == "train-sac":
-        from planet_rl.commands.train_sac import main as _main
+        from exorl.commands.train_sac import main as _main
 
         _main(rest)
         raise SystemExit(0)
     elif cmd == "generate-demos":
-        from planet_rl.commands.generate_demos import main as _main
+        from exorl.commands.generate_demos import main as _main
 
         _main(rest)
         raise SystemExit(0)
     elif cmd == "pretrain-bc":
-        from planet_rl.commands.pretrain_bc import main as _main
+        from exorl.commands.pretrain_bc import main as _main
 
         _main(rest)
         raise SystemExit(0)
     elif cmd == "eval-generalisation":
-        from planet_rl.commands.eval_generalisation import main as _main
+        from exorl.commands.eval_generalisation import main as _main
 
         _main(rest)
         raise SystemExit(0)

@@ -66,33 +66,33 @@ except ImportError:
             pass
 
 
-from planet_rl.core.generator import PRESETS, PlanetGenerator
-from planet_rl.core.physics import (
+from exorl.core.generator import PRESETS, PlanetGenerator
+from exorl.core.physics import (
     AeroConfig,
     OrbitalIntegrator,
     SpacecraftState,
     ThrusterConfig,
 )
-from planet_rl.core.planet import Planet
+from exorl.core.planet import Planet
 
 # Science stack imports — graceful fallback if not available
 try:
-    from planet_rl.core.interior import InteriorConfig, interior_from_bulk_density
+    from exorl.core.interior import InteriorConfig, interior_from_bulk_density
 
     _INTERIOR_OK = True
 except ImportError:
     _INTERIOR_OK = False
 
 try:
-    from planet_rl.core.atmosphere_science import MultiLayerAtmosphere
+    from exorl.core.atmosphere_science import MultiLayerAtmosphere
 
     _ATM_OK = True
 except ImportError:
     _ATM_OK = False
 
 try:
-    from planet_rl.core.star import AU as _AU
-    from planet_rl.core.star import STAR_PRESETS, SpectralType
+    from exorl.core.star import AU as _AU
+    from exorl.core.star import STAR_PRESETS, SpectralType
 
     _STAR_OK = True
 except ImportError:
@@ -100,14 +100,14 @@ except ImportError:
     _AU = 1.496e11
 
 try:
-    from planet_rl.core.habitability import assess_habitability
+    from exorl.core.habitability import assess_habitability
 
     _HAB_OK = True
 except ImportError:
     _HAB_OK = False
 
 try:
-    from planet_rl.core.orbital_analysis import FrozenOrbit, SunSynchronousOrbit
+    from exorl.core.orbital_analysis import FrozenOrbit, SunSynchronousOrbit
 
     _ORB_OK = True
 except ImportError:

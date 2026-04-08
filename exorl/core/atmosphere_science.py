@@ -540,7 +540,7 @@ class JeansEscape:
         Assess escape likelihood for the species in this planet's atmosphere.
         Returns dict: species → {lambda, timescale_gyr, retained}
         """
-        from planet_rl.core.planet import Planet
+        from exorl.core.planet import Planet
 
         if not isinstance(planet, Planet):
             raise TypeError("planet must be a Planet instance")

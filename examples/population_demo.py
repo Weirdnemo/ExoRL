@@ -51,8 +51,8 @@ os.makedirs(args.out, exist_ok=True)
 
 # ── Imports ───────────────────────────────────────────────────────────────────
 print("Loading modules...")
-from planet_rl.core.population import PlanetPopulation
-from planet_rl.visualization import (
+from exorl.core.population import PlanetPopulation
+from exorl.visualization import (
     apply_journal_style,
     plot_correlation_heatmap,
     plot_habitability_distribution,

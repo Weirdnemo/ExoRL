@@ -32,7 +32,7 @@ Outputs (saved to ./training_runs/<tag>/)
     eval_results.json   — final evaluation over 50 episodes
 """
 
-from planet_rl.commands.train_sac import main
+from exorl.commands.train_sac import main
 
 
 if __name__ == "__main__":

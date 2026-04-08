@@ -210,21 +210,21 @@ class PlanetPopulation:
         attach_random_star   : attach a random star + HZ orbital distance
         verbose              : print progress
         """
-        from planet_rl.core.generator import PRESETS, PlanetGenerator
-        from planet_rl.core.habitability import assess_habitability
-        from planet_rl.core.interior import interior_from_bulk_density
-        from planet_rl.core.observation import rv_semi_amplitude
-        from planet_rl.core.observation import transit_depth_ppm as tdppm
+        from exorl.core.generator import PRESETS, PlanetGenerator
+        from exorl.core.habitability import assess_habitability
+        from exorl.core.interior import interior_from_bulk_density
+        from exorl.core.observation import rv_semi_amplitude
+        from exorl.core.observation import transit_depth_ppm as tdppm
 
         try:
-            from planet_rl.core.star import STAR_PRESETS, star_sun
+            from exorl.core.star import STAR_PRESETS, star_sun
 
             _star_ok = True
         except ImportError:
             _star_ok = False
 
         try:
-            from planet_rl.core.atmosphere_science import analyse_atmosphere
+            from exorl.core.atmosphere_science import analyse_atmosphere
 
             _atm_ok = True
         except ImportError:

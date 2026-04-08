@@ -22,7 +22,7 @@ import numpy as np
 
 matplotlib.use("Agg")
 
-from planet_rl.core import (
+from exorl.core import (
     AU,
     MU_SUN,
     PRESETS,
@@ -37,7 +37,7 @@ from planet_rl.core import (
     planet_state,
     star_sun,
 )
-from planet_rl.visualization import (
+from exorl.visualization import (
     W_BLUE,
     W_GREEN,
     W_ORANGE,

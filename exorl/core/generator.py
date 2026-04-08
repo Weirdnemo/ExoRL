@@ -8,7 +8,7 @@ import math
 import random
 from typing import Optional
 
-from planet_rl.core.planet import (
+from exorl.core.planet import (
     M_EARTH,
     R_EARTH,
     AtmosphereComposition,

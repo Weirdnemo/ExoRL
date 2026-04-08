@@ -408,7 +408,7 @@ def surface_energy_balance(
     # Greenhouse warming
     if greenhouse_dT_K is None:
         if planet.atmosphere.enabled:
-            from planet_rl.core.atmosphere_science import (
+            from exorl.core.atmosphere_science import (
                 STANDARD_COMPOSITIONS,
                 GreenhouseModel,
             )

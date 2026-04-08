@@ -9,8 +9,8 @@ from pathlib import Path
 
 import numpy as np
 
-import planet_rl.core.planet_io  # trigger Planet patches
-from planet_rl.core.env import OrbitalInsertionEnv
+import exorl.core.planet_io  # trigger Planet patches
+from exorl.core.env import OrbitalInsertionEnv
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -3,15 +3,27 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "planet-rl"
-version = "0.1.0"
-description = "A reinforcement learning environment for planetary science."
+name = "exorl"
+version = "0.1.1"
+description = "A reinforcement learning + planetary science toolkit."
 readme = "README.md"
 requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "ExoRL contributors" }]
+keywords = ["reinforcement-learning", "astrophysics", "planetary-science", "exoplanets", "gymnasium"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "numpy",
     "matplotlib",
 ]
+
+[project.urls]
+Repository = "https://github.com/Weirdnemo/Planet-RL/"
+Issues = "https://github.com/Weirdnemo/Planet-RL/issues"
 
 [project.optional-dependencies]
 # RL stack used by scripts/ (kept optional so the core science stack stays light)
@@ -28,7 +40,7 @@ dev = [
 ]
 
 [project.scripts]
-planet-rl = "planet_rl.cli:main"
+exorl = "exorl.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["planet_rl", "planet_rl.*"]
+include = ["exorl", "exorl.*"]

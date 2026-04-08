@@ -40,7 +40,7 @@ References
 
 Usage
 -----
-    from planet_rl.core.geology import GeologyModel, TectonicRegime
+    from exorl.core.geology import GeologyModel, TectonicRegime
 
     geo = GeologyModel(planet)
     print(geo.tectonic_regime)          # TectonicRegime.PLATE_TECTONICS

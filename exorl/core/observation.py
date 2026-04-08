@@ -502,7 +502,7 @@ def transmission_spectrum(planet, star=None, orbital_distance_m: float = None) -
     """
     import math as _math
 
-    from planet_rl.core.atmosphere_science import MOLAR_MASS, STANDARD_COMPOSITIONS
+    from exorl.core.atmosphere_science import MOLAR_MASS, STANDARD_COMPOSITIONS
 
     if star is None and hasattr(planet, "star_context"):
         star = planet.star_context
@@ -656,7 +656,7 @@ def characterise_observations(
     T_eq = star.equilibrium_temperature(orbital_distance_m, 0.3)
 
     # TSM — mean molar mass from atmosphere
-    from planet_rl.core.atmosphere_science import MOLAR_MASS, STANDARD_COMPOSITIONS
+    from exorl.core.atmosphere_science import MOLAR_MASS, STANDARD_COMPOSITIONS
 
     comp_name = (
         planet.atmosphere.composition.name if planet.atmosphere.enabled else "NONE"

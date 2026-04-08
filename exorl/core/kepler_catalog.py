@@ -21,7 +21,7 @@ Sources
 
 Usage
 -----
-    from planet_rl.core.kepler_catalog import KeplerCatalog
+    from exorl.core.kepler_catalog import KeplerCatalog
 
     cat = KeplerCatalog()
     print(cat.summary())
@@ -164,8 +164,8 @@ class CatalogEntry:
         Attaches a matching Star and sets orbital distance.
         Interior model is attached based on bulk density.
         """
-        from planet_rl.core.interior import interior_from_bulk_density
-        from planet_rl.core.planet import (
+        from exorl.core.interior import interior_from_bulk_density
+        from exorl.core.planet import (
             AtmosphereComposition,
             AtmosphereConfig,
             MagneticFieldConfig,
@@ -173,7 +173,7 @@ class CatalogEntry:
             Planet,
             TerrainConfig,
         )
-        from planet_rl.core.star import Star
+        from exorl.core.star import Star
 
         # Estimate atmospheric composition from equilibrium temperature
         T_eq = self.equilibrium_temperature_K
@@ -239,7 +239,7 @@ class CatalogEntry:
         """
         if self._hab_score is not None:
             return (self._hab_score, self._hab_grade)
-        from planet_rl.core.habitability import assess_habitability
+        from exorl.core.habitability import assess_habitability
 
         p = self.to_planet()
         ha = assess_habitability(p, p.star_context, self.orbital_distance_m)

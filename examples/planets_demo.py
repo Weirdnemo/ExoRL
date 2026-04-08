@@ -12,8 +12,8 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 
-from planet_rl.core import PRESETS, AtmosphereComposition, PlanetGenerator, TerrainType
-from planet_rl.visualization import (
+from exorl.core import PRESETS, AtmosphereComposition, PlanetGenerator, TerrainType
+from exorl.visualization import (
     FA,
     FG,
     FK,
@@ -31,7 +31,7 @@ from planet_rl.visualization import (
     plot_planet_cross_section,
     save_figure,
 )
-from planet_rl.visualization.visualizer import _ax
+from exorl.visualization.visualizer import _ax
 
 OUT = "figures/planet_figures"
 os.makedirs(OUT, exist_ok=True)

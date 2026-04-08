@@ -2,11 +2,11 @@
 Legacy entrypoint (backwards compatible).
 
 Prefer:
-  - `planet-rl pretrain-bc -- ...`
-  - `python -m planet_rl.commands.pretrain_bc ...`
+  - `exorl pretrain-bc ...`
+  - `python -m exorl.commands.pretrain_bc ...`
 """
 
-from planet_rl.commands.pretrain_bc import main
+from exorl.commands.pretrain_bc import main
 
 
 if __name__ == "__main__":

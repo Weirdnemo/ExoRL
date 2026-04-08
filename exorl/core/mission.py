@@ -725,7 +725,7 @@ def build_mission_dv_budget(
     budget.add("Plane change contingency", 20.0, "Inclination trim")
 
     # Station-keeping
-    from planet_rl.core.orbital_analysis import StationKeeping
+    from exorl.core.orbital_analysis import StationKeeping
 
     sk = StationKeeping.total_annual_budget(
         planet, target_altitude_km, 90.0, ballistic_coeff

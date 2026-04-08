@@ -13,7 +13,7 @@ import numpy as np
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from planet_rl.core import (
+from exorl.core import (
     PRESETS,
     AeroConfig,
     OrbitalIntegrator,
@@ -22,7 +22,7 @@ from planet_rl.core import (
     ThrusterConfig,
     state_to_orbital_elements,
 )
-from planet_rl.visualization import (
+from exorl.visualization import (
     plot_atmosphere_profile,
     plot_atmosphere_single,
     plot_mission_telemetry,

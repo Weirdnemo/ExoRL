@@ -25,7 +25,7 @@ References
 
 Usage
 -----
-    from planet_rl.core.power import PowerModel, SolarPanelConfig
+    from exorl.core.power import PowerModel, SolarPanelConfig
 
     panel  = SolarPanelConfig(area_m2=10.0, efficiency=0.28)
     power  = PowerModel(planet, star, altitude_m=300_000, panel=panel)

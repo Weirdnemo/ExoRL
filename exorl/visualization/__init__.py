@@ -1,4 +1,4 @@
-from planet_rl.visualization.visualizer import (
+from exorl.visualization.visualizer import (
     FT,
     FA,
     FG,

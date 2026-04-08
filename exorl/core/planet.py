@@ -15,7 +15,7 @@ from typing import Optional
 
 # ── Path bootstrap ────────────────────────────────────────────────────────────
 # Allow `python core/planet.py` and `python planet.py` (from core/) to both
-# resolve `from planet_rl.core.X` imports correctly.  We add the project root — the
+# resolve `from exorl.core.X` imports correctly.  We add the project root — the
 # directory that CONTAINS the `core/` package — to sys.path if it isn't there.
 def _ensure_project_root_on_path() -> None:
     # __file__ is .../Planet-RL/core/planet.py
@@ -321,8 +321,8 @@ def _attach_interior_and_star():
     """
     import dataclasses as _dc
 
-    from planet_rl.core.interior import ConvectionState, InteriorConfig  # noqa: F401
-    from planet_rl.core.star import Star  # noqa: F401
+    from exorl.core.interior import ConvectionState, InteriorConfig  # noqa: F401
+    from exorl.core.star import Star  # noqa: F401
 
     # ── Add optional fields ───────────────────────────────────────────────────
     # We extend the dataclass fields list so Planet(interior=...) works.
@@ -501,7 +501,7 @@ def _attach_interior_and_star():
             ]
 
         if self.star_context and self.orbital_distance_m:
-            from planet_rl.core.star import AU
+            from exorl.core.star import AU
 
             T_eq = self.equilibrium_temperature()
             in_hz = self.in_habitable_zone()

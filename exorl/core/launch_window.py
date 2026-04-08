@@ -11,7 +11,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 
-from planet_rl.core.heliocentric import AU, MU_SUN, LambertSolver, planet_state
+from exorl.core.heliocentric import AU, MU_SUN, LambertSolver, planet_state
 
 G = 6.674_30e-11
 
@@ -87,7 +87,7 @@ class LaunchWindow:
         arr_mass,
         arr_radius,
     ):
-        from planet_rl.core.soi import patched_conic_budget
+        from exorl.core.soi import patched_conic_budget
 
         return patched_conic_budget(
             dep_mass,

@@ -2,11 +2,11 @@
 Legacy entrypoint (backwards compatible).
 
 Prefer:
-  - `planet-rl eval-generalisation -- ...`
-  - `python -m planet_rl.commands.eval_generalisation ...`
+  - `exorl eval-generalisation ...`
+  - `python -m exorl.commands.eval_generalisation ...`
 """
 
-from planet_rl.commands.eval_generalisation import main
+from exorl.commands.eval_generalisation import main
 
 
 if __name__ == "__main__":

@@ -36,7 +36,7 @@ References
 
 Usage
 -----
-    from planet_rl.core.thermal_evolution import ThermalEvolution
+    from exorl.core.thermal_evolution import ThermalEvolution
 
     evol = ThermalEvolution(planet, star)
     history = evol.run(dt_myr=10)
@@ -240,7 +240,7 @@ class ThermalEvolution:
     ) -> float:
         """Greenhouse warming [K] for given atmospheric state."""
         try:
-            from planet_rl.core.atmosphere_science import (
+            from exorl.core.atmosphere_science import (
                 STANDARD_COMPOSITIONS,
                 GreenhouseModel,
             )
@@ -297,7 +297,7 @@ class ThermalEvolution:
             core_hot = (T_core > T_CORE_SOLIDUS) and (self.core_mass_frac > 0.03)
             # Rotation check: slow rotators can't sustain a dipole (Rossby number)
             rot_hr = abs(self.planet.rotation_period) / 3600.0
-            from planet_rl.core.interior import DYNAMO_MAX_PERIOD_HR
+            from exorl.core.interior import DYNAMO_MAX_PERIOD_HR
 
             rotation_ok = rot_hr < DYNAMO_MAX_PERIOD_HR
             dynamo = core_hot and rotation_ok

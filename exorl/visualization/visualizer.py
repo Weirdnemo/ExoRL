@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
 
-from planet_rl.core.physics import SpacecraftState
-from planet_rl.core.planet import Planet
+from exorl.core.physics import SpacecraftState
+from exorl.core.planet import Planet
 
 # ── Wong (2011) colorblind-safe palette ───────────────────────────────────────
 W_BLUE = "#0072B2"
@@ -1286,7 +1286,7 @@ def plot_transfer_dashboard(
 
     G_si = 6.674e-11
     try:
-        from planet_rl.core.soi import HyperbolicArrival, HyperbolicDeparture
+        from exorl.core.soi import HyperbolicArrival, HyperbolicDeparture
 
         mu_dep = G_si * departure_planet.mass
         mu_arr = G_si * arrival_planet.mass
@@ -1459,7 +1459,7 @@ def plot_mass_radius(
     import matplotlib.pyplot as plt
     import numpy as np
 
-    from planet_rl.core.population import composition_radius
+    from exorl.core.population import composition_radius
 
     standalone = ax is None
     if standalone:

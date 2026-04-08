@@ -85,8 +85,8 @@ except ImportError:
             pass
 
 
-from planet_rl.core.generator import PRESETS
-from planet_rl.core.heliocentric import (
+from exorl.core.generator import PRESETS
+from exorl.core.heliocentric import (
     AU,
     MU_SUN,
     HeliocentricIntegrator,
@@ -95,19 +95,19 @@ from planet_rl.core.heliocentric import (
     LambertSolver,
     planet_state,
 )
-from planet_rl.core.launch_window import (
+from exorl.core.launch_window import (
     LaunchDecisionSpace,
     orbital_period_days,
     synodic_period_days,
 )
-from planet_rl.core.physics import (
+from exorl.core.physics import (
     AeroConfig,
     OrbitalIntegrator,
     SpacecraftState,
     ThrusterConfig,
 )
-from planet_rl.core.planet import Planet
-from planet_rl.core.soi import (
+from exorl.core.planet import Planet
+from exorl.core.soi import (
     HyperbolicArrival,
     SphereOfInfluence,
     laplace_soi_radius,
@@ -118,21 +118,21 @@ G = 6.674_30e-11
 
 # --- Optional science stack ---
 try:
-    from planet_rl.core.interior import interior_from_bulk_density
+    from exorl.core.interior import interior_from_bulk_density
 
     _INTERIOR_OK = True
 except ImportError:
     _INTERIOR_OK = False
 
 try:
-    from planet_rl.core.atmosphere_science import MultiLayerAtmosphere
+    from exorl.core.atmosphere_science import MultiLayerAtmosphere
 
     _ATM_OK = True
 except ImportError:
     _ATM_OK = False
 
 try:
-    from planet_rl.core.star import STAR_PRESETS, star_sun
+    from exorl.core.star import STAR_PRESETS, star_sun
 
     _STAR_OK = True
 except ImportError:
@@ -156,14 +156,14 @@ except ImportError:
 
 
 try:
-    from planet_rl.core.habitability import assess_habitability
+    from exorl.core.habitability import assess_habitability
 
     _HAB_OK = True
 except ImportError:
     _HAB_OK = False
 
 try:
-    from planet_rl.core.orbital_analysis import FrozenOrbit
+    from exorl.core.orbital_analysis import FrozenOrbit
 
     _ORB_OK = True
 except ImportError:

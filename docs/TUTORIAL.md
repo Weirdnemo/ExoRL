@@ -35,7 +35,7 @@ pip install -e ".[rl]"
 Sanity check:
 
 ```bash
-python -c "import planet_rl; print('planet_rl import OK')"
+python -c "import exorl; print('exorl import OK')"
 ```
 
 ---
@@ -44,19 +44,19 @@ python -c "import planet_rl; print('planet_rl import OK')"
 
 Planet-RL exposes **three** `gymnasium.Env`-style environments:
 
-- **`OrbitalInsertionEnv`** (`planet_rl/core/env.py`)
+- **`OrbitalInsertionEnv`** (`exorl/core/env.py`)
   - **Goal**: capture + circularise into a near-circular target orbit (default: ~300 km)
   - **Action**: 3 continuous values in `[-1, 1]` (thrust magnitude + attitude controls)
   - **Observation**:
     - **full**: 18 floats (core orbital state + science/orbit design signals)
     - **lite**: 10 floats (core orbital state only)
 
-- **`InterplanetaryEnv`** (`planet_rl/core/interplanetary_env.py`)
+- **`InterplanetaryEnv`** (`exorl/core/interplanetary_env.py`)
   - **Goal**: end-to-end mission episode (window selection → heliocentric cruise → capture)
   - **Action**: 4 continuous values in `[-1, 1]` (phase-dependent controls)
   - **Observation**: 28 floats (includes a capture phase that uses the same planetocentric state layout as `OrbitalInsertionEnv`)
 
-- **`ScienceOpsEnv`** (`planet_rl/core/science_ops_env.py`)
+- **`ScienceOpsEnv`** (`exorl/core/science_ops_env.py`)
   - **Goal**: post-insertion science operations (altitude/inclination choices + observe/downlink decisions)
   - **Action**: 4 continuous values in `[-1, 1]`
   - **Observation**: 16 floats
@@ -66,7 +66,7 @@ The main “starter” environment used by the BC→SAC scripts in this tutorial
 You can quickly inspect an episode interactively:
 
 ```bash
-python -c "from planet_rl.core.env import OrbitalInsertionEnv; env=OrbitalInsertionEnv(obs_dim=10); env.reset(); print(env.observation_space, env.action_space)"
+python -c "from exorl.core.env import OrbitalInsertionEnv; env=OrbitalInsertionEnv(obs_dim=10); env.reset(); print(env.observation_space, env.action_space)"
 ```
 
 ---
@@ -93,7 +93,7 @@ python -c "from planet_rl.core.env import OrbitalInsertionEnv; env=OrbitalInsert
 ### Full track
 
 ```bash
-planet-rl generate-demos \
+exorl generate-demos \
   --episodes 200 \
   --presets-only \
   --out demos/demos_presets_200.npz \
@@ -104,7 +104,7 @@ planet-rl generate-demos \
 ### Lite track
 
 ```bash
-planet-rl generate-demos \
+exorl generate-demos \
   --lite \
   --episodes 200 \
   --presets-only \
@@ -122,7 +122,7 @@ BC turns demonstrations into a warm-startable policy.
 ### Full track
 
 ```bash
-planet-rl pretrain-bc \
+exorl pretrain-bc \
   --demos demos/demos_presets_200.npz \
   --out bc_model_presets_200 \
   --epochs 10 \
@@ -134,7 +134,7 @@ planet-rl pretrain-bc \
 ### Lite track
 
 ```bash
-planet-rl pretrain-bc \
+exorl pretrain-bc \
   --demos demos/demos_presets_200_lite.npz \
   --out bc_model_presets_200_lite \
   --epochs 10 \
@@ -154,7 +154,7 @@ Output to remember:
 ### Full track (fixed Earth baseline)
 
 ```bash
-planet-rl train-sac \
+exorl train-sac \
   --mode fixed \
   --planet earth \
   --steps 20000 \
@@ -167,7 +167,7 @@ planet-rl train-sac \
 ### Lite track (fast baseline)
 
 ```bash
-planet-rl train-sac \
+exorl train-sac \
   --lite \
   --mode fixed \
   --planet earth \
@@ -191,7 +191,7 @@ Outputs:
 ### Full track
 
 ```bash
-planet-rl eval-generalisation \
+exorl eval-generalisation \
   --model training_runs/<run_name>/model_final.zip \
   --planets earth mars venus moon titan \
   --episodes 10
@@ -200,7 +200,7 @@ planet-rl eval-generalisation \
 ### Lite track
 
 ```bash
-planet-rl eval-generalisation \
+exorl eval-generalisation \
   --lite \
   --model training_runs/<run_name>/model_final.zip \
   --planets earth mars \

@@ -1,12 +1,51 @@
-core/__pycache__/
-visualization/__pycache__/
-.vscode/settings.json
+# ──────────────────────────────────────────────────────────────────────────────
+# Python caches / venvs
+# ──────────────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyd
+.Python
+
+.venv/
+venv/
+ENV/
+env/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Packaging / build outputs
+# ──────────────────────────────────────────────────────────────────────────────
+build/
+dist/
+*.egg-info/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Test / lint caches
+# ──────────────────────────────────────────────────────────────────────────────
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Editor / OS
+# ──────────────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Project run artifacts (generated)
+# ──────────────────────────────────────────────────────────────────────────────
+training_runs/
+demos/
+bc_model*/
+
+# Generated population CSVs (keep the code; ignore generated datasets)
+examples/csv-data/population_*.csv
+
+# Legacy / local scratch files
 nogithub.py
 testing_nogithub.py
 training_sac.py
 test.py
-training_runs/
-bc_model/
-bc_model_v2/
-demos/
-Planet-RL/science_figures/population_500.csv

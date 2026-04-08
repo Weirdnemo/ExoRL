@@ -29,7 +29,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Optional
 
-from planet_rl.core.atmosphere_science import (
+from exorl.core.atmosphere_science import (
     STANDARD_COMPOSITIONS,
     GreenhouseModel,
     JeansEscape,
@@ -93,7 +93,7 @@ def score_stellar_type(star) -> tuple[float, str]:
     F stars: more UV, shorter lifetime.
     A/B/O stars: insufficient main sequence lifetime for life to develop.
     """
-    from planet_rl.core.star import SpectralType
+    from exorl.core.star import SpectralType
 
     T = star.spectral_type
     scores = {
@@ -297,7 +297,7 @@ def score_magnetic_protection(planet) -> tuple[float, str]:
     if hasattr(planet, "derived_magnetic_field_T"):
         B_T = planet.derived_magnetic_field_T()
     elif planet.magnetic_field.enabled:
-        from planet_rl.core.planet import MagneticFieldStrength
+        from exorl.core.planet import MagneticFieldStrength
 
         B_map = {
             MagneticFieldStrength.NONE: 0.0,
@@ -372,7 +372,7 @@ def score_interior_activity(planet) -> tuple[float, str]:
 
     A geologically dead planet loses its atmosphere and its climate thermostat.
     """
-    from planet_rl.core.interior import ConvectionState
+    from exorl.core.interior import ConvectionState
 
     if not (
         hasattr(planet, "interior") and planet.interior and planet.interior.enabled
