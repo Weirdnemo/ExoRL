@@ -8,8 +8,172 @@ It was built to answer a research question: can a reinforcement learning agent l
 
 ---
 
+## Getting Started
+
+### Dependencies / Installation
+
+Planet-RL is a Python project. The reinforcement-learning scripts additionally rely on:
+
+- `gymnasium` (Gym API)
+- `torch` (policy networks)
+- `stable-baselines3` (SAC baseline)
+
+Recommended install (CPU PyTorch; use the CUDA variant if you need GPU):
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+
+pip install -e .
+pip install gymnasium stable-baselines3 torch
+```
+
+### Quickstart: run a small experiment (SAC with BC warmstart)
+
+This pipeline is end-to-end:
+
+1. Generate an expert dataset (successful episodes only)
+2. Pretrain an actor with Behavioural Cloning (BC)
+3. Warm-start SAC and train on `OrbitalInsertionEnv`
+4. Evaluate zero-shot generalisation across planets
+
+#### 1) Generate demonstrations
+
+```bash
+python scripts/generate_demos.py \
+  --episodes 200 \
+  --presets-only \
+  --out demos/demos_presets_200.npz \
+  --max-steps 4000 \
+  --seed 0
+```
+
+#### 2) Train BC (behavioural cloning)
+
+```bash
+python scripts/pretrain_bc.py \
+  --demos demos/demos_presets_200.npz \
+  --out bc_model_presets_200 \
+  --epochs 10 \
+  --batch-size 256 \
+  --seed 0
+```
+
+This creates a warm-start model at:
+
+- `bc_model_presets_200/bc_policy.zip`
+
+#### 3) Train SAC (Soft Actor-Critic)
+
+```bash
+python scripts/train_sac.py \
+  --mode fixed \
+  --planet earth \
+  --steps 20000 \
+  --tag quick \
+  --eval-freq 5000 \
+  --eval-episodes 5 \
+  --pretrain bc_model_presets_200/bc_policy.zip
+```
+
+SAC writes outputs to `training_runs/<run_name>/`, where `run_name` already includes the timestamp:
+
+- `--tag`
+- `--mode`
+- a timestamp printed at startup
+
+#### 4) Evaluate the trained model
+
+Replace `<run_name>` with the directory created in `training_runs/`:
+
+```bash
+python scripts/eval_generalisation.py \
+  --model training_runs/<run_name>/model_final.zip \
+  --planets earth mars \
+  --episodes 10
+```
+
+The evaluator produces:
+
+- `generalisation_results.json`
+- `generalisation_table.png` (a publication-style figure)
+
+#### Expected outputs & files
+
+After running the quickstart steps, you should see:
+
+- Demonstration dataset:
+  - `demos/demos_presets_200.npz` (name depends on your `--out`)
+  - Key arrays in the `.npz`:
+    - `observations`: `float32`, shape `(N, 18)`
+    - `actions`: `float32`, shape `(N, 3)`
+    - `episode_ids`: `int32`, shape `(N,)`
+    - `planet_names`, `successes`, `rewards`: per-episode arrays for the generated episodes (only successful episode steps are kept for training pairs)
+- Behavioural cloning (BC):
+  - `bc_model_presets_200/bc_policy.zip` (SB3-compatible model)
+  - `bc_model_presets_200/bc_policy_best.pt` and `bc_model_presets_200/bc_policy_final.pt`
+  - `bc_model_presets_200/bc_history.json`
+- SAC training run:
+  - Output directory: `training_runs/<tag>_<mode>_<timestamp>/`
+  - `config.json`
+  - `learning_curve.csv`
+  - `learning_curve.png`
+  - `model_final.zip`
+  - `model_best.zip`
+  - `eval_results.json`
+
+### Environments at a Glance
+
+Planet-RL provides multiple `gymnasium.Env`-style environments. The primary training target for the scripts above is:
+
+#### `OrbitalInsertionEnv` (`planet_rl/core/env.py`)
+
+- Observation: `obs_dim` floats
+  - default: `obs_dim=18` (science stack enabled)
+  - legacy: `obs_dim=10` when using `--no-science` in training
+- Action: 3 continuous floats in `[-1, 1]`
+  - `action[0]`: thrust magnitude (mapped to `[0, max_thrust]`)
+  - `action[1]`: pitch (mapped to `[-pi/2, pi/2]`)
+  - `action[2]`: yaw (mapped to `[-pi, pi]`)
+- Episode success (terminal):
+  - altitude error < 5% and eccentricity < 0.05, and not crashed
+- Episode termination (crash/escape/overheat/timeout/no-fuel):
+  - crash: altitude goes below 0 m
+  - overheat: `heat_load > heat_limit`
+  - escape: radius becomes too large for the capture problem
+  - timeout / no fuel: `max_steps` or fuel < 1 kg
+
+#### `InterplanetaryEnv` (`planet_rl/core/interplanetary_env.py`)
+
+- Observation: 28 floats
+- Action: 4 continuous floats in `[-1, 1]`
+- Single episode is 3 phases:
+  - `window`: choose departure/arrival slots, commit when `action[2] > 0`
+  - `cruise`: one step ~= one simulated day until target SOI entry
+  - `capture`: switches to the same orbital insertion physics as `OrbitalInsertionEnv`
+
+#### `ScienceOpsEnv` (`planet_rl/core/science_ops_env.py`)
+
+- Observation: 16 floats
+- Action: 4 continuous floats in `[-1, 1]`
+  - `action[0]`: altitude change (mapped to a +/- 50 km manoeuvre via Hohmann)
+  - `action[1]`: inclination change (mapped to +/- 5 degrees)
+  - `action[2]`: observe toggle (instruments on when > 0)
+  - `action[3]`: downlink toggle (downlink when > 0)
+- Reward blends science return (coverage + observational metrics), power constraints, data buffer overflow, and manoeuvre `Delta-V` costs.
+
+
+### Background / Reference
+
+Everything after `## Contents` is the “reference background” for the simulation stack: how planets are generated (Core/Population), how their atmospheres and climate work (Atmosphere & Climate + Science Modules), and how mission-science quantities feed the RL environments.
+
+---
+
 ## Contents
 
+- **Getting Started** — dependencies · quickstart · workflow diagram
+- **Environments at a Glance** — observation/action interfaces
+- **Training workflow** — demo → BC → SAC → eval
 - **1. Core** — `planet` · `generator` · `interior` · `star` · `physics`
 - **2. Atmosphere & Climate** — `atmosphere_science` · `climate`
 - **3. Science Modules** — `habitability` · `orbital_analysis` · `ground_track` · `surface_energy` · `tidal` · `observation`
@@ -17,7 +181,8 @@ It was built to answer a research question: can a reinforcement learning agent l
 - **5. Population** — `population`
 - **6. RL Environments** — `env` · `interplanetary_env`
 - **7. Visualisation** — `visualization`
-- **8. Scripts** — `science_demo` · `planets_demo` · `population_demo` · `transfer_viz_demo`
+- **8. Examples & Scripts** — demos and plotting helpers
+- **Troubleshooting** — setup and runtime issues
 - **9. Known Limitations**
 
 ---
@@ -567,10 +732,10 @@ print(pop.summary())
 From the command line:
 
 ```bash
-python population_demo.py                             # generate 500 planets
-python population_demo.py --n 2000 --seed 0          # larger run
-python population_demo.py --fast                     # 100 planets, quick test
-python population_demo.py --load population_500.csv  # use existing CSV
+python examples/population_demo.py                             # generate 500 planets
+python examples/population_demo.py --n 2000 --seed 0          # larger run
+python examples/population_demo.py --fast                     # 100 planets, quick test
+python examples/population_demo.py --load examples/csv-data/population_500.csv  # use existing CSV
 ```
 
 The CSV contains 22 columns per planet covering physical properties, interior quantities, atmosphere state, habitability score, composition, and observational signatures. See the [population feature reference](#) for the full column list.
@@ -712,12 +877,12 @@ Identical physics to `OrbitalInsertionEnv`. The agent fires retrograde burns to 
 
 ## 7. Visualisation
 
-### `visualization/visualizer.py`
+### `planet_rl/visualization/visualizer.py`
 
 All plot functions follow the same style — white background, Wong colour palette, no decorative elements, publication-quality at 300 DPI.
 
 ```python
-from visualization import (
+from planet_rl.visualization.visualizer import (
     plot_planet_cross_section,
     plot_atmosphere_profile,
     plot_heliocentric_transfer,
@@ -743,47 +908,67 @@ save_figure(fig, "my_porkchop", output_dir="./output")
 
 ---
 
-## 8. Scripts
+## 8. Examples & Scripts
 
-### `science_demo.py`
+All commands in this section assume you're running from the repository root (`Planet-RL/`). Figures are written to:
+
+- `figures/science_figures/`
+- `figures/planet_figures/`
+
+### `examples/science_demo.py`
 
 Runs the full science feature demonstration and produces figures `fig01` through `fig10` in `figures/science_figures/`.
 
 ```bash
-python science_demo.py
+python examples/science_demo.py
 ```
 
-### `planets_demo.py`
+### `examples/planets_demo.py`
 
 Produces the generator figures (`fig1a` through `fig6`) in `figures/planet_figures/`.
 
 ```bash
-python planets_demo.py
+python examples/planets_demo.py
 ```
 
-### `population_demo.py`
+### `examples/population_demo.py`
 
 Generates a planet population and produces figures `fig15` through `fig18`.
 
 ```bash
-python population_demo.py --n 500
-python population_demo.py --load population_500.csv  # skip generation
+python examples/population_demo.py --n 500
+python examples/population_demo.py --load examples/csv-data/population_500.csv  # skip generation
 ```
 
-### `transfer_viz_demo.py`
+### `examples/transfer_viz_demo.py`
 
 Produces the interplanetary transfer figures (`fig11` through `fig14`).
 
 ```bash
-python transfer_viz_demo.py
+python examples/transfer_viz_demo.py
 ```
 
 ---
 
-## 9. Known Limitations
+## Troubleshooting
 
-- **Heat flux** is ~4× lower than Earth's real value. The model uses radiogenic budget only and omits secular cooling.
-- **Venus dynamo** is incorrectly flagged as active. Venus has no magnetic field despite being Earth-sized — the model uses mass-based heuristics that fail here.
-- **Greenhouse warming** underestimates Earth by ~40% (model: 19 K, real: 33 K). Water vapour feedback is not yet implemented — only CO₂ forcing.
-- **Mars J2** is ~22% low due to the empirical power-law interior fit.
-- **Lambert solver** cannot handle exactly 0° or 180° transfer angles (collinear geometry). A 0.001 rad offset resolves it in practice.
+### “ModuleNotFoundError” for RL dependencies (gymnasium / torch / stable-baselines3)
+- Recreate a clean venv and follow the install commands in `## Getting Started` (see `pip install gymnasium stable-baselines3 torch`).
+
+### “Observation dimension mismatch” when warm-starting SAC from BC
+- For BC/SAC warm-start, keep `obs_dim` consistent across all steps.
+- Recommended path: leave science enabled (do not pass `--no-science` to `train_sac.py`), so the default `obs_dim=18` is used everywhere.
+
+### Figures/data go into unexpected folders
+- All scripts use relative paths from the repository root. Run from `Planet-RL/` and expect:
+  - figure outputs under `figures/science_figures/` and `figures/planet_figures/`
+  - demo datasets under `demos/`
+  - training artifacts under `training_runs/`
+
+### Visualization import errors
+- If you see an error like `ModuleNotFoundError: No module named 'visualization'`, it comes from `planet_rl/visualization/__init__.py` using an incorrect absolute import.
+- Workaround: run the `examples/*_demo.py` scripts after fixing that import, or call into plotting code directly from `planet_rl/visualization/visualizer.py`.
+
+### “File not found” for evaluation
+- `eval_generalisation.py` expects a path to the trained SB3 model zip:
+  - `training_runs/<run_name>/model_final.zip`
