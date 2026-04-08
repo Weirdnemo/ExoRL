@@ -6,6 +6,11 @@ The core idea is physical consistency. The J2 oblateness your agent fights durin
 
 It was built to answer a research question: can a reinforcement learning agent learn to design planetary missions — choosing departure windows, executing interplanetary transfers, and inserting into science orbits — when trained across a physically diverse population of procedurally generated planets?
 
+If you want guided walkthroughs:
+
+- RL end-to-end: `docs/TUTORIAL.md`
+- Astrophysics / planetary science (no RL): `docs/ASTROPHYSICS_TUTORIAL.md`
+
 ---
 
 ## Getting Started
