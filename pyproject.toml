@@ -4,15 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "exorl"
-version = "0.1.2"                    # ← I bumped this (good practice)
+version = "0.1.2"
 description = "A reinforcement learning + planetary science toolkit."
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 
-# === Updated Author Info ===
 authors = [
-    { name = "Weirdnemo", email = "nimesh.chn@gmail.com" }   # ← Change to your real email
+    { name = "Weirdnemo", email = "nimesh.chn@gmail.com" }   
 ]
 
 keywords = ["reinforcement-learning", "astrophysics", "planetary-science", "exoplanets", "gymnasium"]
@@ -27,7 +26,6 @@ dependencies = [
     "matplotlib",
 ]
 
-# === URLs (this controls Home-page on pip show) ===
 [project.urls]
 Homepage = "https://github.com/Weirdnemo/ExoRL/"
 Repository = "https://github.com/Weirdnemo/ExoRL/"
@@ -35,13 +33,11 @@ Issues = "https://github.com/Weirdnemo/ExoRL/issues"
 
 
 [project.optional-dependencies]
-# RL stack used by scripts/ (kept optional so the core science stack stays light)
 rl = [
     "gymnasium",
     "stable-baselines3",
     "torch",
 ]
-# Developer tooling
 dev = [
     "pytest",
     "ruff",
