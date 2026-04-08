@@ -19,41 +19,49 @@ References:
 """
 
 from __future__ import annotations
+
 import math
 from dataclasses import dataclass, field
 from typing import Optional
-from enum import Enum, auto
 
 # ── Physical constants ────────────────────────────────────────────────────────
-R_GAS    = 8.314_462     # J mol⁻¹ K⁻¹  (universal gas constant)
-k_B      = 1.380_649e-23 # J K⁻¹         (Boltzmann)
-N_AVO    = 6.022_141e23  # mol⁻¹          (Avogadro)
-G        = 6.674_30e-11  # m³ kg⁻¹ s⁻²
+R_GAS = 8.314_462  # J mol⁻¹ K⁻¹  (universal gas constant)
+k_B = 1.380_649e-23  # J K⁻¹         (Boltzmann)
+N_AVO = 6.022_141e23  # mol⁻¹          (Avogadro)
+G = 6.674_30e-11  # m³ kg⁻¹ s⁻²
 SIGMA_SB = 5.670_374e-8  # W m⁻² K⁻⁴
 
 # ── Molar masses (g/mol) ─────────────────────────────────────────────────────
 MOLAR_MASS = {
-    "N2":   28.014,
-    "O2":   31.999,
-    "CO2":  44.009,
-    "CH4":  16.043,
-    "H2O":  18.015,
-    "H2":    2.016,
-    "He":    4.003,
-    "Ar":   39.948,
-    "SO2":  64.065,
-    "H2S":  34.081,
-    "NH3":  17.031,
-    "N2O":  44.013,
-    "O3":   47.998,
-    "HCl":  36.461,
+    "N2": 28.014,
+    "O2": 31.999,
+    "CO2": 44.009,
+    "CH4": 16.043,
+    "H2O": 18.015,
+    "H2": 2.016,
+    "He": 4.003,
+    "Ar": 39.948,
+    "SO2": 64.065,
+    "H2S": 34.081,
+    "NH3": 17.031,
+    "N2O": 44.013,
+    "O3": 47.998,
+    "HCl": 36.461,
 }
 
 # ── Specific heat ratios (γ = Cp/Cv) ─────────────────────────────────────────
 GAMMA = {
-    "N2": 1.40, "O2": 1.40, "CO2": 1.28, "CH4": 1.31,
-    "H2O": 1.33, "H2": 1.41, "He": 1.67, "Ar": 1.67,
-    "SO2": 1.26, "H2S": 1.32, "NH3": 1.31,
+    "N2": 1.40,
+    "O2": 1.40,
+    "CO2": 1.28,
+    "CH4": 1.31,
+    "H2O": 1.33,
+    "H2": 1.41,
+    "He": 1.67,
+    "Ar": 1.67,
+    "SO2": 1.26,
+    "H2S": 1.32,
+    "NH3": 1.31,
 }
 
 # ── Adiabatic lapse rate: Γ = Mg/Cp  [K/m] ───────────────────────────────────
@@ -64,39 +72,39 @@ GAMMA = {
 # due to rounding — they are renormalised internally)
 STANDARD_COMPOSITIONS = {
     "EARTH_LIKE": {
-        "N2":  0.7808,
-        "O2":  0.2095,
-        "Ar":  0.0093,
+        "N2": 0.7808,
+        "O2": 0.2095,
+        "Ar": 0.0093,
         "CO2": 0.0004,
-        "H2O": 0.0100,   # 1% average tropospheric humidity
+        "H2O": 0.0100,  # 1% average tropospheric humidity
     },
-    "CO2_THIN": {    # Mars
+    "CO2_THIN": {  # Mars
         "CO2": 0.9532,
-        "N2":  0.0270,
-        "Ar":  0.0160,
-        "O2":  0.0013,
-        "CO":  0.0008,
+        "N2": 0.0270,
+        "Ar": 0.0160,
+        "O2": 0.0013,
+        "CO": 0.0008,
     },
-    "CO2_THICK": {   # Venus
+    "CO2_THICK": {  # Venus
         "CO2": 0.9650,
-        "N2":  0.0350,
+        "N2": 0.0350,
         "SO2": 0.00015,
-        "Ar":  0.00007,
+        "Ar": 0.00007,
     },
     "NITROGEN": {
-        "N2":  0.9800,
-        "Ar":  0.0150,
+        "N2": 0.9800,
+        "Ar": 0.0150,
         "CO2": 0.0050,
     },
-    "METHANE": {     # Titan
-        "N2":  0.9840,
+    "METHANE": {  # Titan
+        "N2": 0.9840,
         "CH4": 0.0149,
-        "H2":  0.0010,
-        "Ar":  0.0001,
+        "H2": 0.0010,
+        "Ar": 0.0001,
     },
-    "HYDROGEN": {    # Gas giant envelope
-        "H2":  0.8600,
-        "He":  0.1360,
+    "HYDROGEN": {  # Gas giant envelope
+        "H2": 0.8600,
+        "He": 0.1360,
         "CH4": 0.0030,
         "NH3": 0.0005,
         "H2O": 0.0005,
@@ -116,12 +124,13 @@ class AtmosphericLayer:
     Temperature varies linearly at rate lapse_rate [K/m].
     A negative lapse_rate means temperature *increases* with altitude (inversion).
     """
+
     name: str
-    base_altitude_m: float          # bottom of layer [m]
-    top_altitude_m: float           # top of layer [m]
-    base_temperature_K: float       # temperature at base [K]
-    lapse_rate_K_per_m: float       # dT/dz  [K/m]; positive = cooling with altitude
-    composition: dict[str, float]   # mole fractions at this layer
+    base_altitude_m: float  # bottom of layer [m]
+    top_altitude_m: float  # top of layer [m]
+    base_temperature_K: float  # temperature at base [K]
+    lapse_rate_K_per_m: float  # dT/dz  [K/m]; positive = cooling with altitude
+    composition: dict[str, float]  # mole fractions at this layer
     # Derived lazily
     _mean_molar_mass: Optional[float] = field(default=None, repr=False)
 
@@ -133,10 +142,13 @@ class AtmosphericLayer:
         total_frac = sum(self.composition.values())
         if total_frac == 0:
             return 29.0  # default air-like
-        mm = sum(
-            frac * MOLAR_MASS.get(gas, 29.0)
-            for gas, frac in self.composition.items()
-        ) / total_frac
+        mm = (
+            sum(
+                frac * MOLAR_MASS.get(gas, 29.0)
+                for gas, frac in self.composition.items()
+            )
+            / total_frac
+        )
         self._mean_molar_mass = mm
         return mm
 
@@ -144,8 +156,9 @@ class AtmosphericLayer:
     def mean_molar_mass_kg_mol(self) -> float:
         return self.mean_molar_mass_g_mol * 1e-3
 
-    def scale_height(self, gravity_m_s2: float,
-                     temperature_K: Optional[float] = None) -> float:
+    def scale_height(
+        self, gravity_m_s2: float, temperature_K: Optional[float] = None
+    ) -> float:
         """
         Scale height H = RT/(Mg)  [m].
         Uses base_temperature_K if temperature_K not specified.
@@ -156,8 +169,8 @@ class AtmosphericLayer:
     def temperature_at(self, altitude_m: float) -> float:
         """Temperature at a given altitude within this layer [K]."""
         dz = altitude_m - self.base_altitude_m
-        T  = self.base_temperature_K - self.lapse_rate_K_per_m * dz
-        return max(T, 20.0)   # physical lower bound
+        T = self.base_temperature_K - self.lapse_rate_K_per_m * dz
+        return max(T, 20.0)  # physical lower bound
 
     def adiabatic_lapse_rate(self, gravity_m_s2: float) -> float:
         """
@@ -166,7 +179,7 @@ class AtmosphericLayer:
         """
         total = sum(self.composition.values()) or 1
         gamma_mix = sum(
-            (f/total) * GAMMA.get(g, 1.4) for g, f in self.composition.items()
+            (f / total) * GAMMA.get(g, 1.4) for g, f in self.composition.items()
         )
         Cp = gamma_mix * R_GAS / ((gamma_mix - 1) * self.mean_molar_mass_kg_mol)
         return gravity_m_s2 / Cp  # K/m
@@ -190,6 +203,7 @@ class MultiLayerAtmosphere:
     # Or construct directly
     atm = MultiLayerAtmosphere.earth_standard(planet)
     """
+
     layers: list[AtmosphericLayer]
     surface_pressure_Pa: float
     planet_radius_m: float
@@ -212,17 +226,15 @@ class MultiLayerAtmosphere:
         P = self.surface_pressure_Pa
         for layer in self.layers[:-1]:
             # Integrate from layer base to top using mean conditions
-            dz   = layer.top_altitude_m - layer.base_altitude_m
+            dz = layer.top_altitude_m - layer.base_altitude_m
             T_mid = layer.temperature_at(
                 (layer.base_altitude_m + layer.top_altitude_m) / 2
             )
-            g_mid = self._gravity_at(
-                (layer.base_altitude_m + layer.top_altitude_m) / 2
-            )
-            H    = R_GAS * T_mid / (layer.mean_molar_mass_kg_mol * g_mid)
-            P    = P * math.exp(-dz / H)
+            g_mid = self._gravity_at((layer.base_altitude_m + layer.top_altitude_m) / 2)
+            H = R_GAS * T_mid / (layer.mean_molar_mass_kg_mol * g_mid)
+            P = P * math.exp(-dz / H)
             pressures.append(P)
-        pressures.append(0.0)   # top of atmosphere
+        pressures.append(0.0)  # top of atmosphere
         self._base_pressures = pressures
 
     def _layer_at(self, altitude_m: float) -> tuple[AtmosphericLayer, int]:
@@ -247,10 +259,10 @@ class MultiLayerAtmosphere:
         layer, idx = self._layer_at(altitude_m)
         P_base = self._base_pressures[idx]
         # Integrate within this layer
-        dz   = altitude_m - layer.base_altitude_m
+        dz = altitude_m - layer.base_altitude_m
         T_mid = layer.temperature_at(layer.base_altitude_m + dz / 2)
         g_mid = self._gravity_at(layer.base_altitude_m + dz / 2)
-        H     = R_GAS * T_mid / (layer.mean_molar_mass_kg_mol * g_mid)
+        H = R_GAS * T_mid / (layer.mean_molar_mass_kg_mol * g_mid)
         return P_base * math.exp(-dz / H)
 
     def density_at(self, altitude_m: float) -> float:
@@ -280,12 +292,11 @@ class MultiLayerAtmosphere:
 
     def speed_of_sound(self, altitude_m: float) -> float:
         """Speed of sound c = sqrt(γRT/M) [m/s]."""
-        T     = self.temperature_at(altitude_m)
+        T = self.temperature_at(altitude_m)
         layer, _ = self._layer_at(max(0.0, altitude_m))
         total = sum(layer.composition.values()) or 1
         gamma = sum(
-            (f/total) * GAMMA.get(g, 1.4)
-            for g, f in layer.composition.items()
+            (f / total) * GAMMA.get(g, 1.4) for g, f in layer.composition.items()
         )
         M = layer.mean_molar_mass_kg_mol
         return math.sqrt(gamma * R_GAS * T / M)
@@ -303,7 +314,7 @@ class MultiLayerAtmosphere:
         Uses the composition name to look up standard mole fractions,
         and the AtmosphereConfig for surface conditions.
         """
-        comp_name  = atm_config.composition.name if atm_config.enabled else "NONE"
+        comp_name = atm_config.composition.name if atm_config.enabled else "NONE"
         composition = dict(STANDARD_COMPOSITIONS.get(comp_name, {"N2": 1.0}))
         if not composition:
             composition = {"N2": 1.0}
@@ -311,17 +322,17 @@ class MultiLayerAtmosphere:
         # Normalise fractions
         total = sum(composition.values())
         if total > 0:
-            composition = {k: v/total for k, v in composition.items()}
+            composition = {k: v / total for k, v in composition.items()}
 
         g_surface = G * planet.mass / planet.radius**2
 
         # Troposphere
-        T0     = atm_config.surface_temp
-        lapse  = atm_config.lapse_rate
-        H0     = atm_config.scale_height
+        T0 = atm_config.surface_temp
+        lapse = atm_config.lapse_rate
+        H0 = atm_config.scale_height
         tropo_top = T0 / lapse if lapse > 1e-6 else 50_000.0
         tropo_top = min(tropo_top, 100_000.0)
-        T_tropo   = max(T0 - lapse * tropo_top, 100.0)
+        T_tropo = max(T0 - lapse * tropo_top, 100.0)
 
         # Stratosphere (isothermal to 5 scale heights)
         strato_top = tropo_top + 5 * H0
@@ -349,8 +360,9 @@ class MultiLayerAtmosphere:
                 top_altitude_m=strato_top * 3,
                 base_temperature_K=T_tropo * 1.2,
                 lapse_rate_K_per_m=0.0,
-                composition={k: v for k, v in composition.items()
-                             if MOLAR_MASS.get(k, 99) > 4},  # He/H2 escape faster
+                composition={
+                    k: v for k, v in composition.items() if MOLAR_MASS.get(k, 99) > 4
+                },  # He/H2 escape faster
             ),
         ]
         return cls(
@@ -365,17 +377,33 @@ class MultiLayerAtmosphere:
         """Standard 5-layer Earth atmosphere (troposphere through thermosphere)."""
         comp_tropo = STANDARD_COMPOSITIONS["EARTH_LIKE"].copy()
         total = sum(comp_tropo.values())
-        comp_tropo = {k: v/total for k, v in comp_tropo.items()}
+        comp_tropo = {k: v / total for k, v in comp_tropo.items()}
 
         return cls(
             layers=[
-                AtmosphericLayer("troposphere",   0,       12_000, 288.0,  0.0065, comp_tropo),
-                AtmosphericLayer("stratosphere",  12_000,  50_000, 216.0, -0.0010, comp_tropo),
-                AtmosphericLayer("mesosphere",    50_000,  85_000, 270.0,  0.0028, comp_tropo),
-                AtmosphericLayer("thermosphere",  85_000, 600_000, 185.0, -0.0020,
-                                 {"N2": 0.79, "O2": 0.21}),
-                AtmosphericLayer("exosphere",    600_000, 10_000_000, 1000.0, 0.0,
-                                 {"N2": 0.50, "O2": 0.20, "H2O": 0.20, "He": 0.10}),
+                AtmosphericLayer("troposphere", 0, 12_000, 288.0, 0.0065, comp_tropo),
+                AtmosphericLayer(
+                    "stratosphere", 12_000, 50_000, 216.0, -0.0010, comp_tropo
+                ),
+                AtmosphericLayer(
+                    "mesosphere", 50_000, 85_000, 270.0, 0.0028, comp_tropo
+                ),
+                AtmosphericLayer(
+                    "thermosphere",
+                    85_000,
+                    600_000,
+                    185.0,
+                    -0.0020,
+                    {"N2": 0.79, "O2": 0.21},
+                ),
+                AtmosphericLayer(
+                    "exosphere",
+                    600_000,
+                    10_000_000,
+                    1000.0,
+                    0.0,
+                    {"N2": 0.50, "O2": 0.20, "H2O": 0.20, "He": 0.10},
+                ),
             ],
             surface_pressure_Pa=101_325.0,
             planet_radius_m=planet.radius,
@@ -401,21 +429,25 @@ class JeansEscape:
     """
 
     @staticmethod
-    def lambda_parameter(species: str, escape_velocity_m_s: float,
-                         exosphere_temperature_K: float) -> float:
+    def lambda_parameter(
+        species: str, escape_velocity_m_s: float, exosphere_temperature_K: float
+    ) -> float:
         """
         Jeans parameter λ = (v_esc / v_th)² = m v_esc² / (2 k_B T).
         Dimensionless. Higher λ = more stable retention.
         """
-        m_kg = MOLAR_MASS.get(species, 29.0) * 1e-3 / N_AVO   # kg per molecule
+        m_kg = MOLAR_MASS.get(species, 29.0) * 1e-3 / N_AVO  # kg per molecule
         v_th_sq = 2 * k_B * exosphere_temperature_K / m_kg
         return escape_velocity_m_s**2 / v_th_sq
 
     @staticmethod
-    def escape_flux(species: str, escape_velocity_m_s: float,
-                    exosphere_temperature_K: float,
-                    exobase_density_m3: float,
-                    planet_radius_m: float) -> float:
+    def escape_flux(
+        species: str,
+        escape_velocity_m_s: float,
+        exosphere_temperature_K: float,
+        exobase_density_m3: float,
+        planet_radius_m: float,
+    ) -> float:
         """
         Jeans escape flux [molecules m⁻² s⁻¹] from the exobase.
 
@@ -423,20 +455,29 @@ class JeansEscape:
 
         where v_th = sqrt(2 k_B T / m) and λ is the Jeans parameter.
         """
-        lam  = JeansEscape.lambda_parameter(species, escape_velocity_m_s,
-                                             exosphere_temperature_K)
+        lam = JeansEscape.lambda_parameter(
+            species, escape_velocity_m_s, exosphere_temperature_K
+        )
         m_kg = MOLAR_MASS.get(species, 29.0) * 1e-3 / N_AVO
         v_th = math.sqrt(2 * k_B * exosphere_temperature_K / m_kg)
-        flux = (exobase_density_m3 * v_th / (2 * math.sqrt(math.pi))
-                * (1 + lam) * math.exp(-lam))
+        flux = (
+            exobase_density_m3
+            * v_th
+            / (2 * math.sqrt(math.pi))
+            * (1 + lam)
+            * math.exp(-lam)
+        )
         return max(0.0, flux)
 
     @staticmethod
-    def retention_timescale_gyr(species: str, escape_velocity_m_s: float,
-                                 exosphere_temperature_K: float,
-                                 surface_pressure_Pa: float,
-                                 surface_gravity_m_s2: float,
-                                 planet_radius_m: float) -> float:
+    def retention_timescale_gyr(
+        species: str,
+        escape_velocity_m_s: float,
+        exosphere_temperature_K: float,
+        surface_pressure_Pa: float,
+        surface_gravity_m_s2: float,
+        planet_radius_m: float,
+    ) -> float:
         """
         Approximate timescale [Gyr] for the species to escape to 1/e of current amount.
 
@@ -448,23 +489,23 @@ class JeansEscape:
         - Real escape rates are also affected by solar wind stripping (if no B-field)
         - Hydrodynamic escape is much faster below λ ≈ 6
         """
-        lam = JeansEscape.lambda_parameter(species, escape_velocity_m_s,
-                                            exosphere_temperature_K)
+        lam = JeansEscape.lambda_parameter(
+            species, escape_velocity_m_s, exosphere_temperature_K
+        )
         if lam > 40:
-            return float("inf")   # negligible escape
+            return float("inf")  # negligible escape
         if lam < 2:
-            return 0.0            # immediate hydrodynamic escape
+            return 0.0  # immediate hydrodynamic escape
 
-        m_kg  = MOLAR_MASS.get(species, 29.0) * 1e-3 / N_AVO
-        v_th  = math.sqrt(2 * k_B * exosphere_temperature_K / m_kg)
+        m_kg = MOLAR_MASS.get(species, 29.0) * 1e-3 / N_AVO
+        v_th = math.sqrt(2 * k_B * exosphere_temperature_K / m_kg)
 
         # Exobase density (rough estimate: 10⁻⁸ Pa → n = P/kT)
         P_exobase = 1e-8  # Pa at exobase
         n_exobase = P_exobase / (k_B * exosphere_temperature_K)
 
         # Jeans flux [molecules m⁻² s⁻¹]
-        flux = (n_exobase * v_th / (2 * math.sqrt(math.pi))
-                * (1 + lam) * math.exp(-lam))
+        flux = n_exobase * v_th / (2 * math.sqrt(math.pi)) * (1 + lam) * math.exp(-lam)
 
         # Column number density N = P_surface / (m g) [molecules m⁻²]
         N_col = surface_pressure_Pa / (m_kg * surface_gravity_m_s2)
@@ -473,28 +514,34 @@ class JeansEscape:
             return float("inf")
 
         t_sec = N_col / flux
-        return t_sec / (1e9 * 365.25 * 86400)   # Gyr
+        return t_sec / (1e9 * 365.25 * 86400)  # Gyr
 
     @staticmethod
-    def can_retain(species: str, escape_velocity_m_s: float,
-                   exosphere_temperature_K: float,
-                   min_retention_gyr: float = 1.0) -> bool:
+    def can_retain(
+        species: str,
+        escape_velocity_m_s: float,
+        exosphere_temperature_K: float,
+        min_retention_gyr: float = 1.0,
+    ) -> bool:
         """
         True if the planet can retain this species for at least min_retention_gyr.
         """
-        lam = JeansEscape.lambda_parameter(species, escape_velocity_m_s,
-                                            exosphere_temperature_K)
+        lam = JeansEscape.lambda_parameter(
+            species, escape_velocity_m_s, exosphere_temperature_K
+        )
         # Rough rule: λ > 20 → stable for billions of years
         return lam > 20
 
     @staticmethod
-    def all_species_assessment(planet, exosphere_temp_K: float = None
-                               ) -> dict[str, dict]:
+    def all_species_assessment(
+        planet, exosphere_temp_K: float = None
+    ) -> dict[str, dict]:
         """
         Assess escape likelihood for the species in this planet's atmosphere.
         Returns dict: species → {lambda, timescale_gyr, retained}
         """
-        from core.planet import Planet
+        from planet_rl.core.planet import Planet
+
         if not isinstance(planet, Planet):
             raise TypeError("planet must be a Planet instance")
         if not planet.atmosphere.enabled:
@@ -520,10 +567,10 @@ class JeansEscape:
                 species, v_esc, exosphere_temp_K, P_srf, g_srf, planet.radius
             )
             results[species] = {
-                "lambda":         lam,
-                "timescale_gyr":  t_gyr,
-                "retained_1gyr":  t_gyr > 1.0,
-                "retained_4gyr":  t_gyr > 4.0,
+                "lambda": lam,
+                "timescale_gyr": t_gyr,
+                "retained_1gyr": t_gyr > 1.0,
+                "retained_4gyr": t_gyr > 4.0,
             }
         return results
 
@@ -557,25 +604,28 @@ class GreenhouseModel:
     """
 
     # Earth reference: ΔT_GH = 33 K at P_CO2 = 280 ppm × 1 atm = 28.3 Pa
-    EARTH_CO2_PA   = 28.3    # Pa  (280 ppm × 101325)
-    EARTH_DT_CO2   = 15.0    # K  (CO₂ + other non-H₂O gases)
-    EARTH_DT_H2O   = 18.0    # K  (water vapour feedback, temp-dependent)
-    EARTH_DT_TOTAL = 33.0    # K  (total greenhouse warming on Earth)
+    EARTH_CO2_PA = 28.3  # Pa  (280 ppm × 101325)
+    EARTH_DT_CO2 = 15.0  # K  (CO₂ + other non-H₂O gases)
+    EARTH_DT_H2O = 18.0  # K  (water vapour feedback, temp-dependent)
+    EARTH_DT_TOTAL = 33.0  # K  (total greenhouse warming on Earth)
 
     @staticmethod
-    def co2_partial_pressure(composition: dict[str, float],
-                              surface_pressure_Pa: float) -> float:
+    def co2_partial_pressure(
+        composition: dict[str, float], surface_pressure_Pa: float
+    ) -> float:
         """CO₂ partial pressure [Pa] from mole fraction × surface pressure."""
         return composition.get("CO2", 0.0) * surface_pressure_Pa
 
     @staticmethod
-    def ch4_partial_pressure(composition: dict[str, float],
-                              surface_pressure_Pa: float) -> float:
+    def ch4_partial_pressure(
+        composition: dict[str, float], surface_pressure_Pa: float
+    ) -> float:
         return composition.get("CH4", 0.0) * surface_pressure_Pa
 
     @staticmethod
-    def h2o_partial_pressure(composition: dict[str, float],
-                              surface_pressure_Pa: float) -> float:
+    def h2o_partial_pressure(
+        composition: dict[str, float], surface_pressure_Pa: float
+    ) -> float:
         return composition.get("H2O", 0.0) * surface_pressure_Pa
 
     @classmethod
@@ -598,7 +648,7 @@ class GreenhouseModel:
             delta = cls.EARTH_DT_CO2 * (1 + 0.7 * math.log10(ratio))
         else:
             # Venus: ratio ≈ 3e5, need ~200 K CO2-only then H2O amplifier adds rest
-            base  = cls.EARTH_DT_CO2 * (1 + 0.7 * math.log10(1e4))
+            base = cls.EARTH_DT_CO2 * (1 + 0.7 * math.log10(1e4))
             delta = base * (ratio / 1e4) ** 0.35
         return delta
 
@@ -607,7 +657,7 @@ class GreenhouseModel:
         """
         Greenhouse warming from CH₄ [K].
         Logarithmic scaling (avoids sqrt over-extrapolation at high concentrations).
-        
+
         Calibrated:
           Earth 1.8 ppm (0.018 Pa)  → ~0.5 K
           Titan 1.5% CH4 (2200 Pa)  → ~8 K  (actual Titan: ~12 K from CH4)
@@ -615,11 +665,11 @@ class GreenhouseModel:
         """
         if P_CH4_Pa <= 0:
             return 0.0
-        ref_Pa = 0.018   # 1.8 ppm at 1 atm (Earth reference)
-        ratio  = P_CH4_Pa / ref_Pa
+        ref_Pa = 0.018  # 1.8 ppm at 1 atm (Earth reference)
+        ratio = P_CH4_Pa / ref_Pa
         # Log formula: ΔT = a × log10(ratio + 1)
         # a calibrated to give 0.5 K at Earth (ratio=1)
-        a = 0.5 / math.log10(2.0)   # ≈ 1.66
+        a = 0.5 / math.log10(2.0)  # ≈ 1.66
         return a * math.log10(ratio + 1.0)
 
     @classmethod
@@ -641,11 +691,11 @@ class GreenhouseModel:
     def water_vapour_amplifier(cls, T_surface_K: float) -> float:
         """
         Water vapour feedback amplification factor.
-        
+
         Physical basis: warmer atmosphere holds more H₂O (Clausius-Clapeyron).
         More H₂O → stronger greenhouse → warmer surface → even more H₂O.
         This positive feedback roughly doubles the CO₂ forcing on Earth.
-        
+
         Calibrated:
           250 K → 1.0× (cold, dry atmosphere)
           288 K → 2.2× (Earth: CO₂-only ~15 K, total 33 K → ratio 2.2)
@@ -671,10 +721,13 @@ class GreenhouseModel:
             return 8.0 + 7.0 * min((T_surface_K - 400) / 200, 1.0)
 
     @classmethod
-    def total_greenhouse_warming_K(cls, composition: dict[str, float],
-                                    surface_pressure_Pa: float,
-                                    surface_temperature_K: float,
-                                    include_h2o_feedback: bool = True) -> float:
+    def total_greenhouse_warming_K(
+        cls,
+        composition: dict[str, float],
+        surface_pressure_Pa: float,
+        surface_temperature_K: float,
+        include_h2o_feedback: bool = True,
+    ) -> float:
         """
         Total greenhouse warming ΔT_GH [K] for a given atmosphere.
 
@@ -687,11 +740,11 @@ class GreenhouseModel:
         """
         P_CO2 = cls.co2_partial_pressure(composition, surface_pressure_Pa)
         P_CH4 = cls.ch4_partial_pressure(composition, surface_pressure_Pa)
-        P_H2  = composition.get("H2", 0.0) * surface_pressure_Pa
+        P_H2 = composition.get("H2", 0.0) * surface_pressure_Pa
 
         dT_co2 = cls.co2_forcing_K(P_CO2)
         dT_ch4 = cls.ch4_forcing_K(P_CH4)
-        dT_h2  = cls.h2_forcing_K(P_H2, surface_pressure_Pa)
+        dT_h2 = cls.h2_forcing_K(P_H2, surface_pressure_Pa)
 
         dT_total = dT_co2 + dT_ch4 + dT_h2
 
@@ -714,11 +767,14 @@ class GreenhouseModel:
         return dT_total
 
     @classmethod
-    def surface_temperature(cls, equilibrium_temperature_K: float,
-                             composition: dict[str, float],
-                             surface_pressure_Pa: float,
-                             max_iterations: int = 30,
-                             tolerance_K: float = 1.0) -> float:
+    def surface_temperature(
+        cls,
+        equilibrium_temperature_K: float,
+        composition: dict[str, float],
+        surface_pressure_Pa: float,
+        max_iterations: int = 30,
+        tolerance_K: float = 1.0,
+    ) -> float:
         """
         Solve for the actual surface temperature iteratively:
         T_surface = T_eq + ΔT_GH(T_surface)
@@ -728,7 +784,7 @@ class GreenhouseModel:
         Caps at 900 K for Venus-like atmospheres (actual Venus = 737 K; our
         simplified model overestimates in the extreme runaway regime).
         """
-        T = equilibrium_temperature_K   # initial guess
+        T = equilibrium_temperature_K  # initial guess
         P_CO2 = composition.get("CO2", 0.0) * surface_pressure_Pa
         # Runaway ceiling: Venus-like P_CO2 > 1e5 Pa → cap at 800 K
         # This prevents the iterative amplifier from diverging
@@ -745,25 +801,29 @@ class GreenhouseModel:
         return min(T, T_cap)
 
     @classmethod
-    def is_runaway_greenhouse(cls, composition: dict[str, float],
-                               surface_pressure_Pa: float,
-                               equilibrium_temperature_K: float) -> bool:
+    def is_runaway_greenhouse(
+        cls,
+        composition: dict[str, float],
+        surface_pressure_Pa: float,
+        equilibrium_temperature_K: float,
+    ) -> bool:
         """
         Rough test for runaway greenhouse state.
         True if the computed surface temperature exceeds ~647 K (supercritical H₂O)
         or exceeds the equilibrium temp by more than 400 K.
         """
-        T_surf = cls.surface_temperature(equilibrium_temperature_K, composition,
-                                          surface_pressure_Pa)
+        T_surf = cls.surface_temperature(
+            equilibrium_temperature_K, composition, surface_pressure_Pa
+        )
         return T_surf > 647 or (T_surf - equilibrium_temperature_K) > 400
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Convenience: full atmospheric analysis for a planet
 # ─────────────────────────────────────────────────────────────────────────────
-def analyse_atmosphere(planet, star=None,
-                       orbital_distance_m: float = None,
-                       bond_albedo: float = 0.3) -> dict:
+def analyse_atmosphere(
+    planet, star=None, orbital_distance_m: float = None, bond_albedo: float = 0.3
+) -> dict:
     """
     Run a complete atmospheric analysis on a Planet object.
 
@@ -781,59 +841,61 @@ def analyse_atmosphere(planet, star=None,
     if not planet.atmosphere.enabled:
         return {"enabled": False}
 
-    comp_name   = planet.atmosphere.composition.name
+    comp_name = planet.atmosphere.composition.name
     composition = dict(STANDARD_COMPOSITIONS.get(comp_name, {"N2": 1.0}))
-    total_frac  = sum(composition.values())
+    total_frac = sum(composition.values())
     if total_frac > 0:
-        composition = {k: v/total_frac for k, v in composition.items()}
+        composition = {k: v / total_frac for k, v in composition.items()}
 
-    multi_layer = MultiLayerAtmosphere.from_atmosphere_config(
-        planet.atmosphere, planet
-    )
+    multi_layer = MultiLayerAtmosphere.from_atmosphere_config(planet.atmosphere, planet)
 
     # Equilibrium temperature
     if star and orbital_distance_m:
         T_eq = star.equilibrium_temperature(orbital_distance_m, bond_albedo)
-    elif hasattr(planet, "star_context") and planet.star_context and planet.orbital_distance_m:
+    elif (
+        hasattr(planet, "star_context")
+        and planet.star_context
+        and planet.orbital_distance_m
+    ):
         T_eq = planet.star_context.equilibrium_temperature(
             planet.orbital_distance_m, bond_albedo
         )
     else:
-        T_eq = planet.atmosphere.surface_temp * 0.85   # rough approximation
+        T_eq = planet.atmosphere.surface_temp * 0.85  # rough approximation
 
     # Greenhouse — iteratively solve for T_surf, then recompute dT_GH at T_surf
     # Bug fix: previously passed T_eq to total_greenhouse_warming_K which used
     # T_eq (~255K) for the water vapour amplifier instead of T_surf (~288K),
     # giving 18.9K instead of the correct ~33K for Earth.
-    P_srf  = planet.atmosphere.surface_pressure
+    P_srf = planet.atmosphere.surface_pressure
     T_surf = GreenhouseModel.surface_temperature(T_eq, composition, P_srf)
-    dT_GH  = T_surf - T_eq
+    dT_GH = T_surf - T_eq
     runaway = GreenhouseModel.is_runaway_greenhouse(composition, P_srf, T_eq)
 
     # Jeans escape
     jeans = JeansEscape.all_species_assessment(planet)
 
     # Scale height (derived from composition, not hand-set)
-    g_srf   = planet.surface_gravity
-    mm      = multi_layer.layers[0].mean_molar_mass_g_mol
-    mm_kg   = mm * 1e-3
-    T0      = planet.atmosphere.surface_temp
+    g_srf = planet.surface_gravity
+    mm = multi_layer.layers[0].mean_molar_mass_g_mol
+    mm_kg = mm * 1e-3
+    T0 = planet.atmosphere.surface_temp
     H_deriv = R_GAS * T0 / (mm_kg * g_srf)
 
     # Atmospheric mass: M_atm = 4πR² × P_srf / g
     M_atm = 4 * math.pi * planet.radius**2 * P_srf / g_srf
 
     return {
-        "enabled":              True,
-        "composition":          composition,
-        "multi_layer":          multi_layer,
-        "equilibrium_temp_K":   T_eq,
-        "greenhouse_dT_K":      dT_GH,
-        "surface_temp_K":       T_surf,
-        "runaway_greenhouse":   runaway,
-        "jeans_escape":         jeans,
-        "scale_height_m":       H_deriv,
-        "scale_height_km":      H_deriv / 1e3,
+        "enabled": True,
+        "composition": composition,
+        "multi_layer": multi_layer,
+        "equilibrium_temp_K": T_eq,
+        "greenhouse_dT_K": dT_GH,
+        "surface_temp_K": T_surf,
+        "runaway_greenhouse": runaway,
+        "jeans_escape": jeans,
+        "scale_height_m": H_deriv,
+        "scale_height_km": H_deriv / 1e3,
         "mean_molar_mass_g_mol": mm,
-        "atmospheric_mass_kg":  M_atm,
+        "atmospheric_mass_kg": M_atm,
     }

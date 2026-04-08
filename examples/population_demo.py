@@ -8,13 +8,7 @@ Usage
     python population_demo.py --seed 7    # different random seed
     python population_demo.py --fast      # 100 planets, quick test
 
-Outputs (saved to ./science_figures/)
---------------------------------------
-    fig15_mass_radius.png / .pdf
-    fig16_habitability_distribution.png / .pdf
-    fig17_correlation_heatmap.png / .pdf
-    fig18_population_dashboard.png / .pdf
-    population_N.csv                       (raw data, openable in Excel)
+Outputs (saved to ./examples/)                      (raw data, openable in Excel)
 """
 
 import argparse
@@ -32,7 +26,10 @@ parser = argparse.ArgumentParser(description="Planet population analysis")
 parser.add_argument("--n", type=int, default=500, help="Number of planets")
 parser.add_argument("--seed", type=int, default=42, help="Random seed")
 parser.add_argument(
-    "--out", type=str, default="science_figures", help="Output directory"
+    "--out", type=str, default="figures/science_figures", help="Output directory"
+)
+parser.add_argument(
+    "--csv", type=str, default="examples/csv-data", help="CSV output location"
 )
 parser.add_argument("--fast", action="store_true", help="Quick test (100 planets)")
 parser.add_argument("--no-atm", action="store_true", help="Skip atmosphere (faster)")
@@ -119,7 +116,7 @@ print(f"  Median J2:                    {stats['j2_median']:.2e}")
 
 # ── Save CSV ──────────────────────────────────────────────────────────────────
 if args.save_csv and not args.load:
-    csv_path = os.path.join(args.out, f"population_{len(pop)}.csv")
+    csv_path = os.path.join(args.csv, f"population_{len(pop)}.csv")
     pop.save(csv_path)
     print(f"\nSaved raw data: {csv_path}")
 elif args.load:

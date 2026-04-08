@@ -10,38 +10,58 @@ Produces four figures:
 Run from Planet-RL root:  python transfer_viz_demo.py
 """
 
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import math
-import numpy as np
+
 import matplotlib
+import numpy as np
+
 matplotlib.use("Agg")
 
-from core import (
-    PRESETS, star_sun, AU,
-    LambertSolver, KeplerPropagator, planet_state, MU_SUN,
-    PorkchopData, LaunchDecisionSpace, LaunchWindow,
-    SphereOfInfluence, HyperbolicArrival, laplace_soi_radius,
+from planet_rl.core import (
+    AU,
+    MU_SUN,
+    PRESETS,
+    HyperbolicArrival,
+    KeplerPropagator,
+    LambertSolver,
+    LaunchDecisionSpace,
+    LaunchWindow,
+    PorkchopData,
+    SphereOfInfluence,
+    laplace_soi_radius,
+    planet_state,
+    star_sun,
 )
-from visualization import (
-    apply_journal_style, save_figure,
-    plot_heliocentric_transfer, plot_porkchop,
-    plot_soi_approach, plot_transfer_dashboard,
-    W_BLUE, W_RED, W_GREEN, W_ORANGE, W_PINK,
+from planet_rl.visualization import (
+    W_BLUE,
+    W_GREEN,
+    W_ORANGE,
+    W_PINK,
+    W_RED,
+    apply_journal_style,
+    plot_heliocentric_transfer,
+    plot_porkchop,
+    plot_soi_approach,
+    plot_transfer_dashboard,
+    save_figure,
 )
 
-OUT = "science_figures"
+OUT = "figures/science_figures"
 os.makedirs(OUT, exist_ok=True)
 apply_journal_style()
 
-sun   = star_sun()
+sun = star_sun()
 earth = PRESETS["earth"]()
-mars  = PRESETS["mars"]()
+mars = PRESETS["mars"]()
 venus = PRESETS["venus"]()
 
 earth.orbital_distance_m = 1.000 * AU
-mars.orbital_distance_m  = 1.524 * AU
+mars.orbital_distance_m = 1.524 * AU
 venus.orbital_distance_m = 0.723 * AU
 
 G = 6.674e-11
@@ -56,8 +76,8 @@ print("=" * 55)
 print("\nComputing Earth→Mars transfer trajectory …")
 
 solver = LambertSolver(MU_SUN)
-prop   = KeplerPropagator(MU_SUN)
-tof_s  = 260 * 86400
+prop = KeplerPropagator(MU_SUN)
+tof_s = 260 * 86400
 r1v, v1p = planet_state(AU, 0.0)
 r2v, v2p = planet_state(1.524 * AU, tof_s)
 
@@ -68,11 +88,11 @@ if v1s is None:
 
 vinf_dep = float(np.linalg.norm(v1s - v1p))
 vinf_arr = float(np.linalg.norm(v2s - v2p))
-print(f"  v∞ departure: {vinf_dep/1e3:.3f} km/s")
-print(f"  v∞ arrival:   {vinf_arr/1e3:.3f} km/s")
-print(f"  C3:           {(vinf_dep/1e3)**2:.2f} km²/s²")
+print(f"  v∞ departure: {vinf_dep / 1e3:.3f} km/s")
+print(f"  v∞ arrival:   {vinf_arr / 1e3:.3f} km/s")
+print(f"  C3:           {(vinf_dep / 1e3) ** 2:.2f} km²/s²")
 
-times_s     = np.linspace(0, tof_s, 300)
+times_s = np.linspace(0, tof_s, 300)
 transfer_traj = prop.orbit_at_time(r1v, v1s, times_s)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -80,33 +100,38 @@ transfer_traj = prop.orbit_at_time(r1v, v1s, times_s)
 # ─────────────────────────────────────────────────────────────────────────────
 print("\nComputing 30×30 porkchop grid (780-day window) …")
 
-dep_days = np.linspace(0,   780, 30)
+dep_days = np.linspace(0, 780, 30)
 arr_days = np.linspace(150, 980, 30)
 
 pc = PorkchopData.compute(
-    AU, 1.524 * AU,
-    dep_days, arr_days,
-    dep_name="Earth", arr_name="Mars",
+    AU,
+    1.524 * AU,
+    dep_days,
+    arr_days,
+    dep_name="Earth",
+    arr_name="Mars",
     min_tof_days=60,
 )
 print(pc.summary())
 
 best_win = pc.best_window(max_c3=25, max_vinf_arr=6, min_tof_days=100)
 if best_win:
-    print(f"  Best window: dep={best_win.departure_day:.0f}d  "
-          f"arr={best_win.arrival_day:.0f}d  "
-          f"C3={best_win.c3_km2_s2:.2f}")
+    print(
+        f"  Best window: dep={best_win.departure_day:.0f}d  "
+        f"arr={best_win.arrival_day:.0f}d  "
+        f"C3={best_win.c3_km2_s2:.2f}"
+    )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Build SOI approach trajectory (planet-centred hyperbolic approach)
 # ─────────────────────────────────────────────────────────────────────────────
 print("\nBuilding Mars SOI approach trajectory …")
 
-mu_mars    = G * mars.mass
+mu_mars = G * mars.mass
 soi_mars_m = laplace_soi_radius(mars.mass, 1.524 * AU)
 
 v_inf_mars = best_win.vinf_arr_m_s if best_win else vinf_arr
-r_peri     = mars.radius + 300_000
+r_peri = mars.radius + 300_000
 
 # Hyperbola geometry
 a_hyp = -mu_mars / v_inf_mars**2
@@ -115,8 +140,8 @@ p_hyp = abs(a_hyp) * (e_hyp**2 - 1)
 
 nu_soi_cos = (p_hyp / soi_mars_m - 1.0) / e_hyp
 nu_soi_cos = max(-1.0, min(1.0, nu_soi_cos))
-nu_soi     = -math.acos(nu_soi_cos) 
-nu_arr     = 0.5
+nu_soi = -math.acos(nu_soi_cos)
+nu_arr = 0.5
 
 nu_vals = np.linspace(nu_soi, nu_arr, 400)
 
@@ -124,25 +149,26 @@ approach_positions = []
 approach_velocities = []
 for nu in nu_vals:
     r_nu = p_hyp / (1 + e_hyp * math.cos(nu))
-    if r_nu > soi_mars_m * 1.05:   
+    if r_nu > soi_mars_m * 1.05:
         continue
     x = r_nu * math.cos(nu)
     y = r_nu * math.sin(nu)
-    v_mag = math.sqrt(mu_mars * (2/r_nu - 1/a_hyp))
-    fpa   = math.atan2(e_hyp * math.sin(nu), 1 + e_hyp * math.cos(nu))
-    theta = nu + math.pi/2 - fpa
-    vx    = -v_mag * math.sin(nu + fpa)
-    vy    =  v_mag * math.cos(nu + fpa)
+    v_mag = math.sqrt(mu_mars * (2 / r_nu - 1 / a_hyp))
+    fpa = math.atan2(e_hyp * math.sin(nu), 1 + e_hyp * math.cos(nu))
+    theta = nu + math.pi / 2 - fpa
+    vx = -v_mag * math.sin(nu + fpa)
+    vy = v_mag * math.cos(nu + fpa)
     approach_positions.append([x, y, 0])
     approach_velocities.append([vx, vy, 0])
 
-approach_traj = np.hstack([
-    np.array(approach_positions),
-    np.array(approach_velocities)
-])
+approach_traj = np.hstack([np.array(approach_positions), np.array(approach_velocities)])
 print(f"  Approach trajectory: {len(approach_traj)} points")
-print(f"  SOI entry distance:  {np.linalg.norm(approach_traj[0,:3])/1e6:.0f} Mm  (SOI={soi_mars_m/1e6:.0f} Mm)")
-print(f"  Periapsis distance:  {np.linalg.norm(approach_traj[np.argmin(np.linalg.norm(approach_traj[:,:3],axis=1))][:3])/1e3:.0f} km  (target {r_peri/1e3:.0f} km)")
+print(
+    f"  SOI entry distance:  {np.linalg.norm(approach_traj[0, :3]) / 1e6:.0f} Mm  (SOI={soi_mars_m / 1e6:.0f} Mm)"
+)
+print(
+    f"  Periapsis distance:  {np.linalg.norm(approach_traj[np.argmin(np.linalg.norm(approach_traj[:, :3], axis=1))][:3]) / 1e3:.0f} km  (target {r_peri / 1e3:.0f} km)"
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FIG 11 — Heliocentric transfer arc
@@ -165,6 +191,7 @@ fig11 = plot_heliocentric_transfer(
 )
 save_figure(fig11, "fig11_heliocentric_transfer", OUT)
 import matplotlib.pyplot as plt
+
 plt.close(fig11)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -173,10 +200,13 @@ plt.close(fig11)
 print("[2/4] Porkchop C3 plot …")
 
 space = LaunchDecisionSpace(
-    AU, 1.524 * AU,
-    n_dep=12, n_arr=12,
+    AU,
+    1.524 * AU,
+    n_dep=12,
+    n_arr=12,
     window_duration_days=780,
-    min_tof_days=100, max_tof_days=450,
+    min_tof_days=100,
+    max_tof_days=450,
 )
 agent_dep_idx, agent_arr_idx = space.best_action()
 agent_cost = space.cost(agent_dep_idx, agent_arr_idx)
@@ -216,20 +246,20 @@ plt.close(fig13)
 print("[4/4] Transfer dashboard …")
 
 fig14 = plot_transfer_dashboard(
-    departure_planet    = earth,
-    arrival_planet      = mars,
-    porkchop_data       = pc,
-    transfer_trajectory = transfer_traj,
-    tof_s               = tof_s,
-    v_inf_dep_m_s       = vinf_dep,
-    v_inf_arr_m_s       = v_inf_mars,
-    approach_trajectory = approach_traj,
-    soi_radius_arr_m    = soi_mars_m,
-    star_name           = "Sun",
-    best_window         = best_win,
-    additional_orbits   = [(0.723*AU, "Venus", W_ORANGE)],
-    output_dir          = OUT,
-    filename            = "fig14_transfer_dashboard",
+    departure_planet=earth,
+    arrival_planet=mars,
+    porkchop_data=pc,
+    transfer_trajectory=transfer_traj,
+    tof_s=tof_s,
+    v_inf_dep_m_s=vinf_dep,
+    v_inf_arr_m_s=v_inf_mars,
+    approach_trajectory=approach_traj,
+    soi_radius_arr_m=soi_mars_m,
+    star_name="Sun",
+    best_window=best_win,
+    additional_orbits=[(0.723 * AU, "Venus", W_ORANGE)],
+    output_dir=OUT,
+    filename="fig14_transfer_dashboard",
 )
 plt.close(fig14)
 
@@ -245,12 +275,12 @@ for fn in sorted(os.listdir(OUT)):
         print(f"  {fn:<45s}  {kb:4d} kB")
 
 print("\nKey numbers:")
-print(f"  Transfer ToF:     {tof_s/86400:.0f} days")
-print(f"  Departure v∞:     {vinf_dep/1e3:.3f} km/s")
-print(f"  Arrival v∞:       {vinf_arr/1e3:.3f} km/s")
-print(f"  C3:               {(vinf_dep/1e3)**2:.2f} km²/s²")
+print(f"  Transfer ToF:     {tof_s / 86400:.0f} days")
+print(f"  Departure v∞:     {vinf_dep / 1e3:.3f} km/s")
+print(f"  Arrival v∞:       {vinf_arr / 1e3:.3f} km/s")
+print(f"  C3:               {(vinf_dep / 1e3) ** 2:.2f} km²/s²")
 print(f"  Porkchop valid:   {pc.valid.sum()} / {pc.valid.size} cells")
-print(f"  SOI Mars:         {soi_mars_m/1e6:.0f} Mm")
+print(f"  SOI Mars:         {soi_mars_m / 1e6:.0f} Mm")
 if best_win:
     print(f"  Best window C3:   {best_win.c3_km2_s2:.2f} km²/s²")
     print(f"  Best v∞ arr:      {best_win.vinf_arr_km_s:.3f} km/s")

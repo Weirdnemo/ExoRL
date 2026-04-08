@@ -12,13 +12,13 @@ The expert controller achieves:
 Usage
 -----
     # Quick dataset (100 episodes, ~2 min)
-    python generate_demos.py --episodes 100 --out demos/demos_100.npz
+    python scripts/generate_demos.py --episodes 100 --out demos/demos_100.npz
 
     # Full BC pretraining dataset (1000 episodes, ~20 min)
-    python generate_demos.py --episodes 1000 --out demos/demos_1000.npz
+    python scripts/generate_demos.py --episodes 1000 --out demos/demos_1000.npz
 
     # Only preset planets
-    python generate_demos.py --episodes 200 --presets-only --out demos/presets.npz
+    python scripts/generate_demos.py --episodes 200 --presets-only --out demos/presets.npz
 
 Output format (compressed .npz)
 --------------------------------

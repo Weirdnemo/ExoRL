@@ -20,10 +20,10 @@ Training details
 Usage
 -----
     # Train BC from demos, save pretrained model
-    python pretrain_bc.py --demos demos/demos_200.npz --out bc_model/
+    python scripts/pretrain_bc.py --demos demos/demos_200.npz --out bc_model/
 
     # Then fine-tune with SAC
-    python train_sac.py --mode fixed --planet earth --steps 200000 \\
+    python scripts/train_sac.py --mode fixed --planet earth --steps 200000 \\
                         --pretrain bc_model/bc_policy.zip --tag bc_finetune
 """
 

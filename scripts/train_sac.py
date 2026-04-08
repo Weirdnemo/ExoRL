@@ -11,16 +11,16 @@ Supports three experimental conditions:
 Usage
 -----
     # Quick test (1k steps, ~30 seconds)
-    python train_sac.py --mode fixed --steps 1000 --tag test
+    python scripts/train_sac.py --mode fixed --steps 1000 --tag test
 
     # Earth baseline (recommended first run, ~30 min)
-    python train_sac.py --mode fixed --steps 200000 --tag earth_baseline
+    python scripts/train_sac.py --mode fixed --steps 200000 --tag earth_baseline
 
     # Full curriculum run (overnight)
-    python train_sac.py --mode curriculum --steps 500000 --tag curriculum_v1
+    python scripts/train_sac.py --mode curriculum --steps 500000 --tag curriculum_v1
 
     # Random planets (generalisation baseline)
-    python train_sac.py --mode random --steps 500000 --tag random_v1
+    python scripts/train_sac.py --mode random --steps 500000 --tag random_v1
 
 Outputs (saved to ./training_runs/<tag>/)
 ------------------------------------------

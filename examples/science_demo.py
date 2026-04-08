@@ -121,7 +121,7 @@ from planet_rl.visualization import (
 from planet_rl.visualization.visualizer import _ax
 
 # ── output directory ──────────────────────────────────────────────────────────
-OUT = "science_figures"
+OUT = "figures/science_figures"
 os.makedirs(OUT, exist_ok=True)
 apply_journal_style()
 

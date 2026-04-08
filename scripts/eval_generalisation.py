@@ -15,16 +15,16 @@ This is the key experiment for the generalisation paper:
 Usage
 -----
     # Evaluate a trained model on all presets
-    python eval_generalisation.py --model training_runs/<run>/model_final.zip
+    python scripts/eval_generalisation.py --model training_runs/<run>/model_final.zip
 
     # Evaluate on specific planets only
-    python eval_generalisation.py --model path/to/model.zip --planets earth mars
+    python scripts/eval_generalisation.py --model path/to/model.zip --planets earth mars
 
     # Also compare against a random policy
-    python eval_generalisation.py --model path/to/model.zip --random-baseline
+    python scripts/eval_generalisation.py --model path/to/model.zip --random-baseline
 
     # Evaluate the Kepler catalog targets
-    python eval_generalisation.py --model path/to/model.zip --kepler
+    python scripts/eval_generalisation.py --model path/to/model.zip --kepler
 
 Outputs
 -------

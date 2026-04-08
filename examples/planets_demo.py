@@ -33,7 +33,7 @@ from planet_rl.visualization import (
 )
 from planet_rl.visualization.visualizer import _ax
 
-OUT = "planet_figures"
+OUT = "figures/planet_figures"
 os.makedirs(OUT, exist_ok=True)
 apply_journal_style()
 
