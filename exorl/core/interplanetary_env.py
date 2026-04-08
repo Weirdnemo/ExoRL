@@ -1,7 +1,7 @@
 """
 interplanetary_env.py — Full planet-to-planet mission RL environment.
 
-This is the central research environment of Planet-RL. An agent executes
+This is the central research environment of ExoRL. An agent executes
 a complete interplanetary mission in three sequential phases:
 
   Phase A — Launch window selection

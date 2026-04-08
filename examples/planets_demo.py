@@ -1,8 +1,3 @@
-"""
-test_planets.py  —  Planet generation and visualisation.
-Run from Planet-RL/:  python test_planets.py
-"""
-
 import os
 import sys
 
@@ -11,7 +6,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
-
 from exorl.core import PRESETS, AtmosphereComposition, PlanetGenerator, TerrainType
 from exorl.visualization import (
     FA,

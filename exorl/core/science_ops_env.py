@@ -3,7 +3,7 @@ science_ops_env.py — Post-insertion science operations RL environment.
 
 The agent controls a spacecraft already in orbit and must maximise science
 value over a fixed mission lifetime. This is the most physically rich
-environment in Planet-RL: it uses power, communications, ground track
+environment in ExoRL: it uses power, communications, ground track
 coverage, atmospheric spectroscopy, and habitability scoring together.
 
 Episode structure

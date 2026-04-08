@@ -22,8 +22,8 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/Weirdnemo/Planet-RL/"
-Issues = "https://github.com/Weirdnemo/Planet-RL/issues"
+Repository = "https://github.com/Weirdnemo/ExoRL/"
+Issues = "https://github.com/Weirdnemo/ExoRL/issues"
 
 [project.optional-dependencies]
 # RL stack used by scripts/ (kept optional so the core science stack stays light)

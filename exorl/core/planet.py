@@ -18,10 +18,10 @@ from typing import Optional
 # resolve `from exorl.core.X` imports correctly.  We add the project root — the
 # directory that CONTAINS the `core/` package — to sys.path if it isn't there.
 def _ensure_project_root_on_path() -> None:
-    # __file__ is .../Planet-RL/core/planet.py
-    # project root is one level up: .../Planet-RL/
+    # __file__ is .../ExoRL/core/planet.py
+    # project root is one level up: .../ExoRL/
     _this_dir = os.path.dirname(os.path.abspath(__file__))  # .../core
-    _proj_root = os.path.dirname(_this_dir)  # .../Planet-RL
+    _proj_root = os.path.dirname(_this_dir)  # .../ExoRL
     if _proj_root not in sys.path:
         sys.path.insert(0, _proj_root)
 

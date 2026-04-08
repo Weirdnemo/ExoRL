@@ -317,4 +317,3 @@ print(transfer_summary(r1, r2, v1_sc, v2_sc, v1p, v2p))
 
 - **Broken image links in this tutorial**:
   - The images in this doc are expected outputs. If they don’t exist yet, run the corresponding `examples/*_demo.py` scripts above to generate them.
-

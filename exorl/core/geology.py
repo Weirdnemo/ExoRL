@@ -131,7 +131,7 @@ class VolcanicActivity:
 
 class GeologyModel:
     """
-    Volcanic outgassing and tectonic regime for a Planet-RL planet.
+    Volcanic outgassing and tectonic regime for a ExoRL planet.
 
     Derives all geological quantities from:
       - planet.derived_heat_flux()    (or interior model)

@@ -205,7 +205,7 @@ After running the quickstart steps, you should see:
 
 ### Environments at a Glance
 
-Planet-RL provides multiple `gymnasium.Env`-style environments. The primary training target for the scripts above is:
+ExoRL provides multiple `gymnasium.Env`-style environments. The primary training target for the scripts above is:
 
 #### `OrbitalInsertionEnv` (`exorl/core/env.py`)
 
@@ -1004,7 +1004,7 @@ save_figure(fig, "my_porkchop", output_dir="./output")
 
 ## 8. Examples & Scripts
 
-All commands in this section assume you're running from the repository root (`Planet-RL/`). Figures are written to:
+All commands in this section assume you're running from the repository root (`ExoRL/`). Figures are written to:
 
 - `figures/science_figures/`
 - `figures/planet_figures/`
@@ -1054,7 +1054,7 @@ python examples/transfer_viz_demo.py
 - Recommended path: leave science enabled (do not pass `--no-science` to `train_sac.py`), so the default `obs_dim=18` is used everywhere.
 
 ### Figures/data go into unexpected folders
-- All scripts use relative paths from the repository root. Run from `Planet-RL/` and expect:
+- All scripts use relative paths from the repository root. Run from `ExoRL/` and expect:
   - figure outputs under `figures/science_figures/` and `figures/planet_figures/`
   - demo datasets under `demos/`
   - training artifacts under `training_runs/`
@@ -1065,4 +1065,3 @@ python examples/transfer_viz_demo.py
 ### “File not found” for evaluation
 - `eval_generalisation.py` expects a path to the trained SB3 model zip:
   - `training_runs/<run_name>/model_final.zip`
-

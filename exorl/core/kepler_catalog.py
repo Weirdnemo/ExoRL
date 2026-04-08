@@ -1,9 +1,9 @@
 """
-kepler_catalog.py — Reference exoplanet catalog with Planet-RL habitability scoring.
+kepler_catalog.py — Reference exoplanet catalog with ExoRL habitability scoring.
 
 Provides a curated dataset of well-characterised rocky exoplanets from the
 Kepler, TESS, and ground-based surveys, all with measured masses and radii.
-Runs the full Planet-RL habitability assessment over each entry and returns
+Runs the full ExoRL habitability assessment over each entry and returns
 a ranked table for comparison with solar system benchmarks.
 
 The bundled catalog covers:
@@ -26,7 +26,7 @@ Usage
     cat = KeplerCatalog()
     print(cat.summary())
 
-    # Score all planets with Planet-RL habitability framework
+    # Score all planets with ExoRL habitability framework
     results = cat.score_all()
     top10   = cat.top_n(10)
 
@@ -160,7 +160,7 @@ class CatalogEntry:
 
     def to_planet(self):
         """
-        Convert this catalog entry to a Planet-RL Planet object.
+        Convert this catalog entry to a ExoRL Planet object.
         Attaches a matching Star and sets orbital distance.
         Interior model is attached based on bulk density.
         """
@@ -234,7 +234,7 @@ class CatalogEntry:
 
     def habitability_score(self) -> tuple[float, str]:
         """
-        Compute Planet-RL habitability score for this entry.
+        Compute ExoRL habitability score for this entry.
         Returns (score, grade).
         """
         if self._hab_score is not None:
@@ -571,7 +571,7 @@ _CATALOG_DATA = [
 
 class KeplerCatalog:
     """
-    Reference exoplanet catalog with Planet-RL habitability scoring.
+    Reference exoplanet catalog with ExoRL habitability scoring.
 
     Bundles 23 well-characterised rocky and near-rocky planets including
     the full TRAPPIST-1 system, plus solar system reference points.
@@ -597,7 +597,7 @@ class KeplerCatalog:
         return None
 
     def get_planet(self, name: str):
-        """Get a Planet-RL Planet object for the named entry."""
+        """Get a ExoRL Planet object for the named entry."""
         e = self.get(name)
         if e is None:
             raise KeyError(f"Planet {name!r} not in catalog")
@@ -612,7 +612,7 @@ class KeplerCatalog:
 
     def score_all(self, verbose: bool = True) -> list[tuple[CatalogEntry, float, str]]:
         """
-        Score every entry with the Planet-RL habitability framework.
+        Score every entry with the ExoRL habitability framework.
         Returns list of (entry, score, grade) sorted by score descending.
         """
         results = []
@@ -630,7 +630,7 @@ class KeplerCatalog:
         return sorted(results, key=lambda x: -x[1])
 
     def top_n(self, n: int = 10) -> list[CatalogEntry]:
-        """Top N most habitable planets by Planet-RL score."""
+        """Top N most habitable planets by ExoRL score."""
         scored = self.score_all(verbose=False)
         return [e for e, s, g in scored[:n]]
 
@@ -656,13 +656,13 @@ class KeplerCatalog:
             )
         lines.append("─" * 92)
         lines.append(
-            f"  {len(self.entries)} planets  (sorted by Planet-RL habitability score)"
+            f"  {len(self.entries)} planets  (sorted by ExoRL habitability score)"
         )
         return "\n".join(lines)
 
     def comparison_table(self) -> dict:
         """
-        Returns a dict with arrays for plotting Planet-RL score vs ESI,
+        Returns a dict with arrays for plotting ExoRL score vs ESI,
         suitable for a scatter plot comparison.
         """
         import math

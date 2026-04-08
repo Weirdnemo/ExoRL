@@ -130,7 +130,7 @@ class ThermalEvolution:
 
     Parameters
     ----------
-    planet      : Planet-RL Planet object
+    planet      : ExoRL Planet object
     star        : Star object (for equilibrium temperature and XUV history)
     orbital_dist: orbital distance [m] (overrides planet.orbital_distance_m)
     age_gyr     : integration endpoint [Gyr] (default: 4.5 Gyr)

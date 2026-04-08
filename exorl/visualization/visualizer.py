@@ -1,5 +1,5 @@
 """
-visualizer.py  —  Planet-RL publication figures.
+visualizer.py  —  ExoRL publication figures.
 """
 
 from __future__ import annotations

@@ -7,7 +7,7 @@ Produces four figures:
   fig13_porkchop_vinf.png          — Arrival v∞ porkchop
   fig14_transfer_dashboard.png     — 4-panel mission dashboard
 
-Run from Planet-RL root:  python transfer_viz_demo.py
+Run from ExoRL root:  python transfer_viz_demo.py
 """
 
 import os

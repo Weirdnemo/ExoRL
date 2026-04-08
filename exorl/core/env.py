@@ -1,7 +1,7 @@
 """
 env.py — Gymnasium-compatible RL environment for orbital insertion.
 
-Upgraded to use the Planet-RL science stack:
+Upgraded to use the ExoRL science stack:
   - J2 from interior model (derived_J2) when available, not hand-set
   - Atmosphere density from MultiLayerAtmosphere (layered, physical)
   - Star context attached so habitability can be scored
@@ -365,7 +365,7 @@ class CurriculumPool:
 
 class OrbitalInsertionEnv(gym.Env if GYM_AVAILABLE else object):
     """
-    Orbital insertion environment wired to the Planet-RL science stack.
+    Orbital insertion environment wired to the ExoRL science stack.
 
     Key upgrades:
       - Physics-consistent J2 from interior model

@@ -1,5 +1,5 @@
 """
-science_demo.py  —  Planet-RL Science Toolkit: Full Feature Demo
+science_demo.py  —  ExoRL Science Toolkit: Full Feature Demo
 =================================================================
 Figures produced
 ----------------
@@ -28,7 +28,6 @@ import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import FancyArrowPatch
 
 # ── science imports ───────────────────────────────────────────────────────────
 from exorl.core import (
@@ -119,6 +118,7 @@ from exorl.visualization import (
     save_figure,
 )
 from exorl.visualization.visualizer import _ax
+from matplotlib.patches import FancyArrowPatch
 
 # ── output directory ──────────────────────────────────────────────────────────
 OUT = "figures/science_figures"

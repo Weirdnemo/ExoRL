@@ -254,4 +254,3 @@ If the images don’t exist yet, run the demos in this section to generate them.
   - BC: `bc_model*/`
   - SAC: `training_runs/`
   - Figures: `figures/`
-
