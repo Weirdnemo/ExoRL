@@ -42,14 +42,26 @@ python -c "import planet_rl; print('planet_rl import OK')"
 
 ## 1) Understand what you’re training
 
-The main “starter” environment used by the scripts is:
+Planet-RL exposes **three** `gymnasium.Env`-style environments:
 
 - **`OrbitalInsertionEnv`** (`planet_rl/core/env.py`)
-  - **Goal**: insert into a near-circular target orbit (default: ~300 km)
+  - **Goal**: capture + circularise into a near-circular target orbit (default: ~300 km)
   - **Action**: 3 continuous values in `[-1, 1]` (thrust magnitude + attitude controls)
   - **Observation**:
     - **full**: 18 floats (core orbital state + science/orbit design signals)
     - **lite**: 10 floats (core orbital state only)
+
+- **`InterplanetaryEnv`** (`planet_rl/core/interplanetary_env.py`)
+  - **Goal**: end-to-end mission episode (window selection → heliocentric cruise → capture)
+  - **Action**: 4 continuous values in `[-1, 1]` (phase-dependent controls)
+  - **Observation**: 28 floats (includes a capture phase that uses the same planetocentric state layout as `OrbitalInsertionEnv`)
+
+- **`ScienceOpsEnv`** (`planet_rl/core/science_ops_env.py`)
+  - **Goal**: post-insertion science operations (altitude/inclination choices + observe/downlink decisions)
+  - **Action**: 4 continuous values in `[-1, 1]`
+  - **Observation**: 16 floats
+
+The main “starter” environment used by the BC→SAC scripts in this tutorial is `OrbitalInsertionEnv`.
 
 You can quickly inspect an episode interactively:
 

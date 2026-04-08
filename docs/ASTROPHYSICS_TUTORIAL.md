@@ -27,6 +27,8 @@ pip install -e .
 
 If you plan to run the plotting-heavy demos, make sure `matplotlib` is installed (it is part of the base dependencies).
 
+> Note: the RL environments live in `planet_rl/core/env.py`, `planet_rl/core/interplanetary_env.py`, and `planet_rl/core/science_ops_env.py`, but this doc focuses on the astrophysics/planet-science modules.
+
 ---
 
 ## 1) Quick tour: planet generation + visualization
