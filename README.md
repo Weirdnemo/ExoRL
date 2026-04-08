@@ -29,7 +29,7 @@ It was built to answer a research question: can a reinforcement learning agent l
 The `Planet` object is the central data structure that every other module operates on. It holds physical properties and exposes derived quantities as methods.
 
 ```python
-from core.generator import PRESETS
+from planet_rl.core.generator import PRESETS
 
 earth = PRESETS["earth"]()
 
@@ -50,7 +50,7 @@ Two ways to get planets: use a named preset, or generate one procedurally.
 **Presets** — five solar system analogues with calibrated properties:
 
 ```python
-from core.generator import PRESETS
+from planet_rl.core.generator import PRESETS
 
 earth = PRESETS["earth"]()
 mars  = PRESETS["mars"]()
@@ -59,14 +59,14 @@ moon  = PRESETS["moon"]()
 titan = PRESETS["titan"]()
 ```
 
-![Preset cross-sections](planet_figures/fig1a_preset_crosssec.png)
+![Preset cross-sections](figures/planet_figures/fig1a_preset_crosssec.png)
 
 Each preset carries its atmosphere, J2 coefficient, magnetic field, moon count, and terrain type. The cross-section diagram above shows relative sizes, core structures, and active features.
 
 **Random generation** — the generator produces planets across 0.1–4× Earth radius and 0.003–100× Earth mass, with randomised atmosphere composition, oblateness, magnetic dipole, and moon count that are all physically consistent with the planet's size and density:
 
 ```python
-from core.generator import PlanetGenerator
+from planet_rl.core.generator import PlanetGenerator
 
 gen = PlanetGenerator(seed=42)
 
@@ -79,21 +79,21 @@ planet = gen.generate(
 )
 ```
 
-![Random planet cross-sections](planet_figures/fig2a_random_crosssec.png)
+![Random planet cross-sections](figures/planet_figures/fig2a_random_crosssec.png)
 
 Each call with a different seed produces a physically distinct planet. The same seed always gives the same planet, so experiments are reproducible.
 
 **Feature toggles** — you can enable features incrementally on the same seed to isolate their effects:
 
-![Feature toggle on identical seed](planet_figures/fig5_toggle.png)
+![Feature toggle on identical seed](figures/planet_figures/fig5_toggle.png)
 
 **Airless worlds** — planets without atmospheres are fully supported. Terrain archetypes (cratered, mountainous, volcanic, flat) determine surface roughness for radar and landing simulations:
 
-![Airless terrain archetypes](planet_figures/fig4_airless.png)
+![Airless terrain archetypes](figures/planet_figures/fig4_airless.png)
 
 **Batch statistics** — generating 50 planets with `magnetic_field_enabled=True` produces this distribution across physical properties:
 
-![Batch statistics across 50 planets](planet_figures/fig6_batch.png)
+![Batch statistics across 50 planets](figures/planet_figures/fig6_batch.png)
 
 The generator spans a wide enough range that agents trained on random planets encounter significantly different physics every episode — from Moon-like bodies with 1.6 m/s² gravity to super-Earths with 40+ m/s².
 
@@ -104,7 +104,7 @@ The generator spans a wide enough range that agents trained on random planets en
 Attaching an interior model lets the planet derive J2, magnetic field, heat flux, and moment of inertia from its bulk density rather than using hand-set values.
 
 ```python
-from core.interior import interior_from_bulk_density
+from planet_rl.core.interior import interior_from_bulk_density
 
 planet.interior = interior_from_bulk_density(planet.mean_density)
 
@@ -116,7 +116,7 @@ moi  = planet.derived_MoI()              # moment of inertia factor C/MR²
 
 The model divides the planet into layers (inner core, outer core, lower mantle, upper mantle, crust) based on bulk density. From that layer structure it computes the moment of inertia integral directly, derives J2, checks the dynamo condition for the magnetic field, and estimates heat flux from a radiogenic element budget scaled to the planet's mass.
 
-![Interior-derived quantities for all five presets](science_figures/fig02_interior_profiles.png)
+![Interior-derived quantities for all five presets](figures/science_figures/fig02_interior_profiles.png)
 
 The figure shows J2, surface magnetic field, heat flux, and moment of inertia factor derived from the interior model for each solar system analogue. Earth and Mars match geodetic measurements to within 5–22%. Heat flux is ~4× low compared to Earth's real 87 mW/m² because the model uses radiogenic budget only and omits secular cooling — this is a known limitation.
 
@@ -127,7 +127,7 @@ The figure shows J2, surface magnetic field, heat flux, and moment of inertia fa
 Seven stellar presets from M to G spectral type. Attaching a star to a planet enables habitable zone placement, climate calculations, and habitability scoring.
 
 ```python
-from core.star import star_sun, STAR_PRESETS
+from planet_rl.core.star import star_sun, STAR_PRESETS
 
 sun      = star_sun()
 proxima  = STAR_PRESETS["proxima"]()
@@ -148,7 +148,7 @@ planet.star_context       = sun
 planet.orbital_distance_m = 1.496e11
 ```
 
-![Habitable zones and XUV flux for all seven stellar presets](science_figures/fig03_star_habitable_zones.png)
+![Habitable zones and XUV flux for all seven stellar presets](figures/science_figures/fig03_star_habitable_zones.png)
 
 The habitable zones span very different physical scales — TRAPPIST-1's HZ sits at 0.03–0.06 AU while a Sun-like star's extends to over 1.7 AU. XUV flux, which drives atmospheric escape, also varies by several orders of magnitude across spectral types, which is why M-dwarf planets score lower on habitability despite being in the HZ.
 
@@ -159,7 +159,7 @@ The habitable zones span very different physical scales — TRAPPIST-1's HZ sits
 The spacecraft dynamics engine. An RK4 integrator propagates a `SpacecraftState` under gravity (including J2), thrust, and aerodynamic drag. This is what `env.py` and `interplanetary_env.py` use internally.
 
 ```python
-from core.physics import SpacecraftState, OrbitalIntegrator, ThrusterConfig, AeroConfig
+from planet_rl.core.physics import SpacecraftState, OrbitalIntegrator, ThrusterConfig, AeroConfig
 
 state = SpacecraftState(
     x=planet.radius + 400_000, y=0, z=0,
@@ -194,7 +194,7 @@ The integrator calls `planet.gravity_vector_J2()` at each substep, so J2 perturb
 Multi-layer atmosphere model with temperature-dependent density profiles, Jeans thermal escape, and greenhouse forcing.
 
 ```python
-from core.atmosphere_science import MultiLayerAtmosphere, analyse_atmosphere
+from planet_rl.core.atmosphere_science import MultiLayerAtmosphere, analyse_atmosphere
 
 # Build layered atmosphere
 atm = MultiLayerAtmosphere.from_atmosphere_config(planet.atmosphere, planet)
@@ -211,11 +211,11 @@ print(result["jeans_escape_rate"])  # atmospheric escape rate [kg/s]
 
 Six composition types are supported: `EARTH_LIKE` (N₂/O₂), `CO2_THIN` (Mars), `CO2_THICK` (Venus), `NITROGEN` (Titan), `METHANE`, and `HYDROGEN` (gas dwarfs). Each has distinct density, pressure, and temperature profiles:
 
-![Atmosphere profiles for all six composition types](planet_figures/fig3_atm_zoo.png)
+![Atmosphere profiles for all six composition types](figures/planet_figures/fig3_atm_zoo.png)
 
 The preset planets use their correct compositions. Randomly generated planets get a composition sampled from this set, weighted by the planet's mass and distance from its star.
 
-![Atmosphere profiles for the five solar system presets](planet_figures/fig1b_preset_atm.png)
+![Atmosphere profiles for the five solar system presets](figures/planet_figures/fig1b_preset_atm.png)
 
 The atmosphere profiles shown above are for Earth, Mars, Venus, Moon (no atmosphere), and Titan. Venus's 9.2 MPa surface pressure and 737 K surface temperature are reproduced correctly. The Moon shows the "no atmosphere" case, which the integrator handles by setting drag to zero.
 
@@ -226,7 +226,7 @@ The atmosphere profiles shown above are for Earth, Mars, Venus, Moon (no atmosph
 A 1D energy balance model (EBM) that finds stable surface temperatures including ice-albedo feedback and the carbonate-silicate thermostat. This connects to the habitability scorer and to the RL reward signal.
 
 ```python
-from core.climate import EnergyBalanceModel, find_bifurcation_points
+from planet_rl.core.climate import EnergyBalanceModel, find_bifurcation_points
 
 ebm = EnergyBalanceModel(planet, star)
 
@@ -257,7 +257,7 @@ Calibration: Earth → 288 K ✓, Mars → snowball ✓, Venus → runaway green
 Scores a planet on ten factors and returns a 0–1 composite score, an A–F grade, and a written assessment.
 
 ```python
-from core.habitability import assess_habitability
+from planet_rl.core.habitability import assess_habitability
 
 # Requires star and orbital distance attached to the planet
 ha = assess_habitability(planet, sun, 1.496e11)
@@ -271,7 +271,7 @@ The ten factors are: stellar flux, surface temperature, atmospheric pressure, es
 
 Solar system calibration: Earth 0.842 (A), Mars 0.361 (D), Venus 0.238 (F), Moon 0.276 (D), Titan 0.135 (F).
 
-![Habitability radar charts for all five presets plus a random planet](science_figures/fig05_habitability_radar.png)
+![Habitability radar charts for all five presets plus a random planet](figures/science_figures/fig05_habitability_radar.png)
 
 The radar charts show how each factor contributes to the overall score. Earth is strong on almost everything. Mars fails primarily on temperature and pressure. Venus fails on temperature and XUV (despite being in the HZ, it has no magnetic field to protect against solar wind). The random planet illustrates how procedurally generated bodies land across the score space.
 
@@ -282,7 +282,7 @@ The radar charts show how each factor contributes to the overall score. Earth is
 J2-driven secular perturbations, sun-synchronous orbit design, frozen orbit eccentricity, atmospheric drag lifetime, and station-keeping budgets.
 
 ```python
-from core.orbital_analysis import (
+from planet_rl.core.orbital_analysis import (
     J2Perturbations, SunSynchronousOrbit, FrozenOrbit, AtmosphericDrag
 )
 import math
@@ -309,7 +309,7 @@ decay = drag.lifetime_days(alt=300_000, area=10.0, mass=1000.0, Cd=2.2)
 print(f"Orbit lifetime: {decay:.0f} days")
 ```
 
-![J2 precession, sun-sync inclinations, frozen orbit map, drag lifetimes](science_figures/fig06_orbital_mechanics.png)
+![J2 precession, sun-sync inclinations, frozen orbit map, drag lifetimes](figures/science_figures/fig06_orbital_mechanics.png)
 
 The frozen orbit eccentricity feeds directly into the RL reward function in `env.py` — an agent that achieves the frozen eccentricity gets a science orbit quality bonus on top of the insertion reward.
 
@@ -320,7 +320,7 @@ The frozen orbit eccentricity feeds directly into the RL reward function in `env
 Sub-satellite ground track, coverage maps, and pass times over ground targets.
 
 ```python
-from core.ground_track import GroundTrack, CoverageMap
+from planet_rl.core.ground_track import GroundTrack, CoverageMap
 
 gt         = GroundTrack(planet, alt=500_000, inc=math.radians(98))
 lats, lons = gt.compute(n_orbits=1)
@@ -335,7 +335,7 @@ grid       = cov.coverage_grid()       # 2D array [lat × lon]
 next_pass = gt.next_pass(lat=35.0, lon=135.0, from_time=0)
 ```
 
-![Ground track and 3-day coverage map](science_figures/fig07_ground_track_coverage.png)
+![Ground track and 3-day coverage map](figures/science_figures/fig07_ground_track_coverage.png)
 
 ---
 
@@ -344,7 +344,7 @@ next_pass = gt.next_pass(lat=35.0, lon=135.0, from_time=0)
 Insolation maps, surface temperature distributions across seasons, and polar ice extent as a function of orbital parameters.
 
 ```python
-from core.surface_energy import SurfaceEnergyMap
+from planet_rl.core.surface_energy import SurfaceEnergyMap
 
 sem    = SurfaceEnergyMap(planet, sun)
 flux   = sem.insolation_at(lat=45.0, lon=0.0, day_of_year=172)  # W/m²
@@ -352,7 +352,7 @@ T_map  = sem.temperature_map(day_of_year=172)  # [lat × lon] array in K
 ice_lat = sem.polar_ice_latitude()              # degrees
 ```
 
-![Insolation and temperature maps across solstice, equinox, and perihelion](science_figures/fig08_surface_energy.png)
+![Insolation and temperature maps across solstice, equinox, and perihelion](figures/science_figures/fig08_surface_energy.png)
 
 ---
 
@@ -361,7 +361,7 @@ ice_lat = sem.polar_ice_latitude()              # degrees
 Tidal heating rate, locking timescale, Roche limit, and orbital migration rate.
 
 ```python
-from core.tidal import TidalModel
+from planet_rl.core.tidal import TidalModel
 
 tidal   = TidalModel(planet, star)
 heating = tidal.surface_heating_rate()                    # W/m²
@@ -373,7 +373,7 @@ da_dt   = tidal.orbital_migration_rate()                  # m/s
 
 Tidal locking status feeds into the habitability scorer. A tidally locked planet receives a heavy penalty because one hemisphere is permanently day-side and the other permanently night — creating extreme temperature gradients that make liquid water unlikely to exist across a significant fraction of the surface.
 
-![Tidal heating, locking map, Roche limits, migration timescales](science_figures/fig09_tidal_dynamics.png)
+![Tidal heating, locking map, Roche limits, migration timescales](figures/science_figures/fig09_tidal_dynamics.png)
 
 ---
 
@@ -382,7 +382,7 @@ Tidal locking status feeds into the habitability scorer. A tidally locked planet
 What the planet looks like to a telescope — transit depth, radial velocity semi-amplitude, transmission spectroscopy metric (TSM), and a basic transmission spectrum.
 
 ```python
-from core.observation import (
+from planet_rl.core.observation import (
     transit_depth_ppm, rv_semi_amplitude,
     transmission_spectroscopy_metric, characterise_observations,
 )
@@ -414,7 +414,7 @@ Calibration: Earth transit depth 83.9 ppm (literature: 84), Earth RV 0.089 m/s (
 Delta-V budgets, aerobraking corridor analysis, and mission-level planning utilities.
 
 ```python
-from core.mission import MissionDesign, AerobrakingCorridor
+from planet_rl.core.mission import MissionDesign, AerobrakingCorridor
 
 G  = 6.674e-11
 md = MissionDesign(planet, G*planet.mass)
@@ -428,7 +428,7 @@ corridor = AerobrakingCorridor(planet)
 alt_min, alt_max = corridor.safe_altitude_range(v_entry=6000.0, heat_limit=1e7)
 ```
 
-![Delta-V budgets, aerobraking corridor, porkchop overview](science_figures/fig10_mission_design.png)
+![Delta-V budgets, aerobraking corridor, porkchop overview](figures/science_figures/fig10_mission_design.png)
 
 ---
 
@@ -437,7 +437,7 @@ alt_min, alt_max = corridor.safe_altitude_range(v_entry=6000.0, heat_limit=1e7)
 Lambert solver, Kepler propagator, and heliocentric integrator for interplanetary trajectory calculations.
 
 ```python
-from core.heliocentric import LambertSolver, KeplerPropagator, planet_state, MU_SUN, AU
+from planet_rl.core.heliocentric import LambertSolver, KeplerPropagator, planet_state, MU_SUN, AU
 import numpy as np
 
 solver = LambertSolver(MU_SUN)
@@ -460,7 +460,7 @@ traj  = prop.orbit_at_time(r1v, v1_sc, times)  # (400, 6) array
 
 The Lambert solver uses the Bate-Mueller-White universal variable method with bisection. Calibration: Earth→Mars near-Hohmann gives v∞_dep = 2.95 km/s and v∞_arr = 2.65 km/s, matching the textbook Hohmann values to within 1%.
 
-![Heliocentric transfer arc coloured by spacecraft speed](science_figures/fig11_heliocentric_transfer.png)
+![Heliocentric transfer arc coloured by spacecraft speed](figures/science_figures/fig11_heliocentric_transfer.png)
 
 The arc is coloured by spacecraft speed — fast near perihelion (bright yellow), slow near aphelion (dark blue). The velocity arrows at Earth and Mars show the departure and arrival directions.
 
@@ -471,7 +471,7 @@ The arc is coloured by spacecraft speed — fast near perihelion (bright yellow)
 Sphere of influence radius, frame transforms between heliocentric and planet-centred coordinates, and hyperbolic approach/departure geometry.
 
 ```python
-from core.soi import (
+from planet_rl.core.soi import (
     SphereOfInfluence, HyperbolicDeparture,
     HyperbolicArrival, patched_conic_budget
 )
@@ -511,7 +511,7 @@ print(budget["dv_total_m_s"])   # ~5960 m/s for Earth→Mars
 Porkchop grid computation, optimal window selection, and the RL decision space interface.
 
 ```python
-from core.launch_window import PorkchopData, LaunchDecisionSpace, AU
+from planet_rl.core.launch_window import PorkchopData, LaunchDecisionSpace, AU
 import numpy as np
 
 # Compute the porkchop grid
@@ -535,13 +535,13 @@ r    = space.reward(10, 12)         # scalar reward in [-1, 0]
 bi, bj = space.best_action()
 ```
 
-![C3 porkchop over one Earth–Mars synodic period](science_figures/fig12_porkchop_c3.png)
+![C3 porkchop over one Earth–Mars synodic period](figures/science_figures/fig12_porkchop_c3.png)
 
 The two green valleys are the two launch opportunities within one 780-day synodic period. The gold circle marks the minimum-C3 window at 9.3 km²/s². Dashed contours show constant time-of-flight.
 
-![Arrival v∞ porkchop with time-of-flight contours](science_figures/fig13_porkchop_vinf.png)
+![Arrival v∞ porkchop with time-of-flight contours](figures/science_figures/fig13_porkchop_vinf.png)
 
-![4-panel mission dashboard](science_figures/fig14_transfer_dashboard.png)
+![4-panel mission dashboard](figures/science_figures/fig14_transfer_dashboard.png)
 
 The dashboard combines the heliocentric transfer arc (top left), C3 porkchop (top right), arrival v∞ porkchop (bottom left), and SOI approach geometry (bottom right) into a single mission overview.
 
@@ -554,7 +554,7 @@ The dashboard combines the heliocentric transfer arc (top left), C3 porkchop (to
 Generates a large population of planets and computes summary statistics, composition classification, habitability distribution, and property correlations.
 
 ```python
-from core.population import PlanetPopulation
+from planet_rl.core.population import PlanetPopulation
 
 pop = PlanetPopulation.generate(n=500, seed=42, verbose=True)
 pop.save("population_500.csv")
@@ -577,17 +577,17 @@ The CSV contains 22 columns per planet covering physical properties, interior qu
 
 Key results from a 500-planet run: 16.4% of randomly generated planets score above 0.5 on habitability, even when all are placed inside the stellar habitable zone. The distribution peaks around Grade C/D — most planets are marginal. This has direct implications for RL training: the habitability reward bonus is sparse, which is why curriculum mode exists.
 
-![Mass-radius diagram with Zeng 2013 composition curves, coloured by habitability](science_figures/fig15_mass_radius.png)
+![Mass-radius diagram with Zeng 2013 composition curves, coloured by habitability](figures/science_figures/fig15_mass_radius.png)
 
 The composition curves show that most generated planets land between rocky and water-rich. The solar system bodies (Earth, Venus, Mars, Moon) all sit correctly on or near the rocky curve. The green points (high habitability) cluster near Earth-mass.
 
-![Habitability score histogram across 500 planets](science_figures/fig16_habitability_distribution.png)
+![Habitability score histogram across 500 planets](figures/science_figures/fig16_habitability_distribution.png)
 
-![Pearson correlation matrix between all physical properties](science_figures/fig17_correlation_heatmap.png)
+![Pearson correlation matrix between all physical properties](figures/science_figures/fig17_correlation_heatmap.png)
 
 Strong correlations to note: mass and radius (r=0.89, expected), B-field and mass (r=0.50, larger planets sustain stronger dynamos), heat flux and MoI (r=−0.52, denser cores radiate less). Habitability correlates most strongly with orbital distance (r=−0.60) because HZ placement is randomised with spread.
 
-![Full population statistics dashboard](science_figures/fig18_population_dashboard.png)
+![Full population statistics dashboard](figures/science_figures/fig18_population_dashboard.png)
 
 ---
 
@@ -598,7 +598,7 @@ Strong correlations to note: mass and radius (r=0.89, expected), B-field and mas
 Single-planet orbital insertion. The agent fires burns to slow a spacecraft from a hyperbolic approach into a stable circular orbit at the target altitude. The environment is wired directly to the science stack — J2 comes from the interior model, drag comes from the multi-layer atmosphere, and the reward includes a habitability-weighted science bonus.
 
 ```python
-from core.env import OrbitalInsertionEnv
+from planet_rl.core.env import OrbitalInsertionEnv
 
 env = OrbitalInsertionEnv(
     planet_preset  = "earth",    # or randomize_planet=True for training
@@ -651,7 +651,7 @@ env = OrbitalInsertionEnv(
 Full planet-to-planet mission in a single episode across three sequential phases: launch window selection, heliocentric cruise, and capture orbit insertion. Each phase uses the correct underlying physics.
 
 ```python
-from core.interplanetary_env import InterplanetaryEnv
+from planet_rl.core.interplanetary_env import InterplanetaryEnv
 import numpy as np
 
 env = InterplanetaryEnv(
@@ -747,7 +747,7 @@ save_figure(fig, "my_porkchop", output_dir="./output")
 
 ### `science_demo.py`
 
-Runs the full science feature demonstration and produces figures `fig01` through `fig10` in `science_figures/`.
+Runs the full science feature demonstration and produces figures `fig01` through `fig10` in `figures/science_figures/`.
 
 ```bash
 python science_demo.py
@@ -755,7 +755,7 @@ python science_demo.py
 
 ### `planets_demo.py`
 
-Produces the generator figures (`fig1a` through `fig6`) in `planet_figures/`.
+Produces the generator figures (`fig1a` through `fig6`) in `figures/planet_figures/`.
 
 ```bash
 python planets_demo.py
@@ -787,4 +787,3 @@ python transfer_viz_demo.py
 - **Greenhouse warming** underestimates Earth by ~40% (model: 19 K, real: 33 K). Water vapour feedback is not yet implemented — only CO₂ forcing.
 - **Mars J2** is ~22% low due to the empirical power-law interior fit.
 - **Lambert solver** cannot handle exactly 0° or 180° transfer angles (collinear geometry). A 0.001 rad offset resolves it in practice.
-
