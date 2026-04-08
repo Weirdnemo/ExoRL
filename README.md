@@ -24,8 +24,29 @@ Recommended install (CPU PyTorch; use the CUDA variant if you need GPU):
 python -m venv .venv
 source .venv/bin/activate
 
+# Core (science + visualization helpers)
 pip install -e .
-pip install gymnasium stable-baselines3 torch
+
+# RL scripts (SAC/BC/eval)
+pip install -e ".[rl]"
+```
+
+### CLI shortcuts
+
+If you install the project (editable or not), you also get a small convenience CLI that wraps the scripts:
+
+```bash
+planet-rl generate-demos --episodes 200 --presets-only --out demos/demos_200.npz
+planet-rl pretrain-bc --demos demos/demos_200.npz --out bc_model_200
+planet-rl train-sac --mode fixed --planet earth --steps 20000 --tag quick
+planet-rl eval-generalisation --model training_runs/<run_name>/model_final.zip
+```
+
+You can also run the same commands as modules:
+
+```bash
+python -m planet_rl.commands.generate_demos --help
+python -m planet_rl.commands.train_sac --help
 ```
 
 ### Quickstart: run a small experiment (SAC with BC warmstart)
@@ -48,6 +69,18 @@ python scripts/generate_demos.py \
   --seed 0
 ```
 
+If you want a faster, “lighter” pipeline for RL iteration (10-dim obs + simplified planets + no science stack), add `--lite`:
+
+```bash
+python scripts/generate_demos.py \
+  --lite \
+  --episodes 200 \
+  --presets-only \
+  --out demos/demos_presets_200_lite.npz \
+  --max-steps 4000 \
+  --seed 0
+```
+
 #### 2) Train BC (behavioural cloning)
 
 ```bash
@@ -56,6 +89,19 @@ python scripts/pretrain_bc.py \
   --out bc_model_presets_200 \
   --epochs 10 \
   --batch-size 256 \
+  --obs-dim 18 \
+  --seed 0
+```
+
+If you used `--lite` when generating demos, train BC with `--obs-dim 10` and point `--demos` at the lite dataset:
+
+```bash
+python scripts/pretrain_bc.py \
+  --demos demos/demos_presets_200_lite.npz \
+  --out bc_model_presets_200_lite \
+  --epochs 10 \
+  --batch-size 256 \
+  --obs-dim 10 \
   --seed 0
 ```
 
@@ -71,6 +117,20 @@ python scripts/train_sac.py \
   --planet earth \
   --steps 20000 \
   --tag quick \
+  --eval-freq 5000 \
+  --eval-episodes 5 \
+  --pretrain bc_model_presets_200/bc_policy.zip
+```
+
+Lite training run (faster; disables the habitability-based curriculum):
+
+```bash
+python scripts/train_sac.py \
+  --lite \
+  --mode fixed \
+  --planet earth \
+  --steps 20000 \
+  --tag quick_lite \
   --eval-freq 5000 \
   --eval-episodes 5 \
   --pretrain bc_model_presets_200/bc_policy.zip
@@ -105,7 +165,7 @@ After running the quickstart steps, you should see:
 - Demonstration dataset:
   - `demos/demos_presets_200.npz` (name depends on your `--out`)
   - Key arrays in the `.npz`:
-    - `observations`: `float32`, shape `(N, 18)`
+    - `observations`: `float32`, shape `(N, 18)` (or `(N, 10)` if generated with `--lite`)
     - `actions`: `float32`, shape `(N, 3)`
     - `episode_ids`: `int32`, shape `(N,)`
     - `planet_names`, `successes`, `rewards`: per-episode arrays for the generated episodes (only successful episode steps are kept for training pairs)
@@ -162,6 +222,19 @@ Planet-RL provides multiple `gymnasium.Env`-style environments. The primary trai
   - `action[3]`: downlink toggle (downlink when > 0)
 - Reward blends science return (coverage + observational metrics), power constraints, data buffer overflow, and manoeuvre `Delta-V` costs.
 
+### Training workflow (demo → BC → SAC → eval)
+
+```mermaid
+flowchart LR
+  Demo[Demo generation\nscripts/generate_demos.py] --> BC[BC pretrain\nscripts/pretrain_bc.py]
+  BC --> SAC[SAC training\nscripts/train_sac.py]
+  SAC --> Eval[Evaluation\nscripts/eval_generalisation.py]
+
+  Demo --> ArtDemo[Artifact: demos/*.npz]
+  BC --> ArtBC[Artifact: bc_model*/bc_policy.zip]
+  SAC --> ArtSAC[Artifact: training_runs*/model_final.zip]
+  Eval --> ArtEval[Artifact: generalisation_results.json]
+```
 
 ### Background / Reference
 
@@ -953,7 +1026,7 @@ python examples/transfer_viz_demo.py
 ## Troubleshooting
 
 ### “ModuleNotFoundError” for RL dependencies (gymnasium / torch / stable-baselines3)
-- Recreate a clean venv and follow the install commands in `## Getting Started` (see `pip install gymnasium stable-baselines3 torch`).
+- Recreate a clean venv and follow the install commands in `## Getting Started` (use `pip install -e ".[rl]"`).
 
 ### “Observation dimension mismatch” when warm-starting SAC from BC
 - For BC/SAC warm-start, keep `obs_dim` consistent across all steps.
@@ -966,9 +1039,9 @@ python examples/transfer_viz_demo.py
   - training artifacts under `training_runs/`
 
 ### Visualization import errors
-- If you see an error like `ModuleNotFoundError: No module named 'visualization'`, it comes from `planet_rl/visualization/__init__.py` using an incorrect absolute import.
-- Workaround: run the `examples/*_demo.py` scripts after fixing that import, or call into plotting code directly from `planet_rl/visualization/visualizer.py`.
+- If you see import errors here, verify `matplotlib` is installed (it is part of the base dependencies) and that you are importing from `planet_rl.visualization`.
 
 ### “File not found” for evaluation
 - `eval_generalisation.py` expects a path to the trained SB3 model zip:
   - `training_runs/<run_name>/model_final.zip`
+

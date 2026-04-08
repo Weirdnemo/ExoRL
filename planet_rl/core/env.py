@@ -383,6 +383,8 @@ class OrbitalInsertionEnv(gym.Env if GYM_AVAILABLE else object):
         planet_preset: Optional[str] = None,
         generator_seed: Optional[int] = None,
         randomize_planet: bool = True,
+        # Performance / training modes
+        lite_mode: bool = False,
         atmosphere_enabled: bool = True,
         terrain_enabled: bool = True,
         magnetic_field_enabled: bool = True,
@@ -420,6 +422,26 @@ class OrbitalInsertionEnv(gym.Env if GYM_AVAILABLE else object):
         obs_dim: int = OBS_DIM,
         render_mode: Optional[str] = None,
     ):
+        # ── Lite mode (fast RL training) ──────────────────────────────────────
+        # Disables expensive science-stack features and simplifies planet generation.
+        #
+        # Motivation: the full science stack is useful for realism and
+        # generalisation research, but it can be overkill (and slower) for
+        # baseline RL iteration.
+        if lite_mode:
+            # Keep the same task, but reduce observation and disable science context.
+            obs_dim = 10
+            use_science_atmosphere = False
+            use_science_j2 = False
+            attach_star = False
+            curriculum_mode = False  # curriculum uses habitability scoring
+
+            # Simplify procedural planets for speed + stability.
+            terrain_enabled = False
+            magnetic_field_enabled = False
+            oblateness_enabled = False
+            moons_enabled = False
+
         self.randomize_planet = randomize_planet
         self.planet_preset = planet_preset
         self._fixed_planet = planet

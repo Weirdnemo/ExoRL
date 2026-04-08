@@ -11,8 +11,24 @@ requires-python = ">=3.8"
 dependencies = [
     "numpy",
     "matplotlib",
-    # Add any other missing dependencies here
 ]
+
+[project.optional-dependencies]
+# RL stack used by scripts/ (kept optional so the core science stack stays light)
+rl = [
+    "gymnasium",
+    "stable-baselines3",
+    "torch",
+]
+
+# Developer tooling
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[project.scripts]
+planet-rl = "planet_rl.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["planet_rl", "planet_rl.*"]
