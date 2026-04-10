@@ -47,6 +47,7 @@ bc_model*/
 # Generated population CSVs (keep the code; ignore generated datasets)
 examples/csv-data/population_*.csv
 
+
 # Legacy / local scratch files
 nogithub.py
 testing_nogithub.py
