@@ -61,7 +61,7 @@ Planet-RL exposes **three** `gymnasium.Env`-style environments:
   - **Action**: 4 continuous values in `[-1, 1]`
   - **Observation**: 16 floats
 
-The main “starter” environment used by the BC→SAC scripts in this tutorial is `OrbitalInsertionEnv`.
+The main “starter” environment used by the BC→SAC scripts in this tutorial is `OrbitalInsertionEnv`..
 
 You can quickly inspect an episode interactively:
 

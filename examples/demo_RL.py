@@ -122,6 +122,7 @@ schedule = [(0, 180, burn_direction * 2500)]
 history = integrator.propagate(initial, duration=7200, dt=5, thrust_schedule=schedule)
 print(f"Propagated {len(history)} steps ({len(history) * 5 / 60:.1f} min)")
 
+
 final = history[-1]
 elems = state_to_orbital_elements(final, target_planet.mu)
 print("Final orbital elements:")
