@@ -34,6 +34,12 @@ jobs:
         run: |
           python -c "import exorl; print('import ok')"
           exorl --help
+          exorl train --help
+          exorl demo --help
+          exorl eval --help
+          exorl planet --help
+          exorl population --help
+          exorl figure --help
 
   extras-linux:
     name: Extras install checks (ubuntu, py3.11)
@@ -55,3 +61,30 @@ jobs:
           pip install -e ".[science]"
           pip install -e ".[dev]"
           pip install -e ".[all]"
+
+  quality-linux:
+    name: Quality gates (ubuntu, py3.11)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run pre-commit
+        run: pre-commit run --all-files
+
+      - name: Run tests with coverage
+        run: pytest
+
+      - name: Run mypy checks
+        run: mypy

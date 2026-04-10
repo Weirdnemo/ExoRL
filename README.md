@@ -21,7 +21,7 @@ ExoRL is a Python project with install extras for different usage modes:
 
 - `exorl[rl]`: RL training/evaluation stack (`gymnasium`, `stable-baselines3`, `torch`)
 - `exorl[science]`: scientific analysis stack (`astropy`, plotting/science helpers)
-- `exorl[dev]`: local quality/release tooling (`pytest`, `ruff`, `build`, `python-semantic-release`)
+- `exorl[dev]`: local quality/release tooling (`pytest`, `pytest-cov`, `ruff`, `black`, `isort`, `mypy`, `pre-commit`, `build`, `python-semantic-release`)
 - `exorl[all]`: all of the above
 
 Recommended install (CPU PyTorch; use the CUDA variant if you need GPU):
@@ -61,10 +61,14 @@ This repo uses **python-semantic-release** for version/changelog/release automat
 Then publish manually with Twine:
 
 ```bash
+rm -rf dist build *.egg-info
 python -m pip install --upgrade twine
 twine check dist/*
 twine upload dist/*
 ```
+
+Before release, make sure `project.version` in `pyproject.toml` is valid PEP440
+(for example `0.2.0`, not `0.2.`).
 
 Typical release:
 
@@ -76,13 +80,30 @@ Typical release:
 
 ### CLI shortcuts
 
-If you install the project (editable or not), you also get a small convenience CLI that wraps the scripts:
+If you install the project (editable or not), you get a convenience CLI with
+both the new v0.2 commands and legacy aliases:
 
 ```bash
-exorl generate-demos --episodes 200 --presets-only --out demos/demos_200.npz
+exorl demo --episodes 200 --presets-only --out demos/demos_200.npz
 exorl pretrain-bc --demos demos/demos_200.npz --out bc_model_200
-exorl train-sac --mode fixed --planet earth --steps 20000 --tag quick
-exorl eval-generalisation --model training_runs/<run_name>/model_final.zip
+exorl train --mode fixed --planet earth --steps 20000 --tag quick
+exorl eval --model training_runs/<run_name>/model_final.zip
+exorl planet --preset mars --summary
+exorl population --n 200 --out examples/csv-data/population_200.csv
+exorl figure --type mass-radius --population examples/csv-data/population_200.csv
+```
+
+Legacy aliases continue to work (`train-sac`, `generate-demos`, `eval-generalisation`).
+
+### Contributor checks
+
+After installing `.[dev]`, run:
+
+```bash
+pre-commit install
+pre-commit run --all-files
+pytest
+mypy
 ```
 
 You can also run the same commands as modules:

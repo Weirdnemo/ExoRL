@@ -11,6 +11,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
+    # New user-facing CLI surface.
+    sub.add_parser("train", help="Run SAC training")
+    sub.add_parser("demo", help="Generate expert demos")
+    sub.add_parser("eval", help="Evaluate trained model generalisation")
+    sub.add_parser("planet", help="Inspect preset or random planet summary")
+    sub.add_parser("population", help="Generate/load population CSV summaries")
+    sub.add_parser("figure", help="Generate population figures from CSV")
+
+    # Legacy aliases kept for backward compatibility.
     sub.add_parser("train-sac", help="Run SAC training")
     sub.add_parser("generate-demos", help="Generate expert demos")
     sub.add_parser("pretrain-bc", help="Run BC pretraining")
@@ -33,30 +42,26 @@ def main(argv: list[str] | None = None) -> None:
         build_parser().print_help()
         raise SystemExit(0)
 
-    if cmd == "train-sac":
-        from exorl.commands.train_sac import main as _main
-
-        _main(rest)
-        raise SystemExit(0)
-    elif cmd == "generate-demos":
-        from exorl.commands.generate_demos import main as _main
-
-        _main(rest)
-        raise SystemExit(0)
+    if cmd in ("train", "train-sac"):
+        from exorl.commands.train import main as _main
+    elif cmd in ("demo", "generate-demos"):
+        from exorl.commands.demo import main as _main
     elif cmd == "pretrain-bc":
         from exorl.commands.pretrain_bc import main as _main
-
-        _main(rest)
-        raise SystemExit(0)
-    elif cmd == "eval-generalisation":
-        from exorl.commands.eval_generalisation import main as _main
-
-        _main(rest)
-        raise SystemExit(0)
+    elif cmd in ("eval", "eval-generalisation"):
+        from exorl.commands.eval import main as _main
+    elif cmd == "planet":
+        from exorl.commands.planet import main as _main
+    elif cmd == "population":
+        from exorl.commands.population import main as _main
+    elif cmd == "figure":
+        from exorl.commands.figure import main as _main
     else:
-        # Let argparse show consistent help + error code.
         build_parser().parse_args([cmd])
         raise SystemExit(2)
+
+    _main(rest)
+    raise SystemExit(0)
 
 
 if __name__ == "__main__":

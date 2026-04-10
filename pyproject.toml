@@ -4,19 +4,28 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "exorl"
-version = "0.1."
+version = "0.2.0"
 description = "A reinforcement learning + planetary science toolkit."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = { text = "MIT" }
 
 authors = [
-    { name = "Weirdnemo", email = "nimesh.chn@gmail.com" }
+    { name = "weirdnemo", email = "nimesh.chn@gmail.com" }
 ]
 
 keywords = ["reinforcement-learning", "astrophysics", "planetary-science", "exoplanets", "gymnasium"]
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
@@ -30,6 +39,8 @@ dependencies = [
 Homepage = "https://github.com/Weirdnemo/ExoRL/"
 Repository = "https://github.com/Weirdnemo/ExoRL/"
 Issues = "https://github.com/Weirdnemo/ExoRL/issues"
+Documentation = "https://github.com/Weirdnemo/ExoRL/blob/main/README.md"
+Changelog = "https://github.com/Weirdnemo/ExoRL/releases"
 
 
 [project.optional-dependencies]
@@ -44,7 +55,12 @@ science = [
 ]
 dev = [
     "pytest",
+    "pytest-cov",
     "ruff",
+    "black",
+    "isort",
+    "mypy",
+    "pre-commit",
     "build",
     "python-semantic-release",
 ]
@@ -55,7 +71,12 @@ all = [
     "astropy",
     "matplotlib",
     "pytest",
+    "pytest-cov",
     "ruff",
+    "black",
+    "isort",
+    "mypy",
+    "pre-commit",
     "build",
     "python-semantic-release",
 ]
@@ -75,3 +96,27 @@ build_command = "python -m build"
 commit_message = "chore(release): {version}"
 upload_to_pypi = false
 upload_to_release = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --cov=exorl --cov-report=term-missing --cov-report=xml --cov-fail-under=80"
+
+[tool.coverage.run]
+branch = true
+source = ["exorl"]
+
+[tool.coverage.report]
+skip_empty = true
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+files = ["exorl/cli.py", "exorl/commands"]
