@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "exorl"
-version = "0.1.2"
+version = "0.1."
 description = "A reinforcement learning + planetary science toolkit."
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 
 authors = [
-    { name = "Weirdnemo", email = "nimesh.chn@gmail.com" }   
+    { name = "Weirdnemo", email = "nimesh.chn@gmail.com" }
 ]
 
 keywords = ["reinforcement-learning", "astrophysics", "planetary-science", "exoplanets", "gymnasium"]
@@ -38,9 +38,26 @@ rl = [
     "stable-baselines3",
     "torch",
 ]
+science = [
+    "astropy",
+    "matplotlib",
+]
 dev = [
     "pytest",
     "ruff",
+    "build",
+    "python-semantic-release",
+]
+all = [
+    "gymnasium",
+    "stable-baselines3",
+    "torch",
+    "astropy",
+    "matplotlib",
+    "pytest",
+    "ruff",
+    "build",
+    "python-semantic-release",
 ]
 
 [project.scripts]
@@ -48,3 +65,13 @@ exorl = "exorl.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["exorl", "exorl.*"]
+
+[tool.semantic_release]
+branch = "main"
+tag_format = "v{version}"
+version_toml = ["pyproject.toml:project.version"]
+changelog_file = "CHANGELOG.md"
+build_command = "python -m build"
+commit_message = "chore(release): {version}"
+upload_to_pypi = false
+upload_to_release = true

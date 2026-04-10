@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install release tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install python-semantic-release build
+
+      - name: Run semantic release
+        id: semantic
+        uses: python-semantic-release/python-semantic-release@v9.17.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build distributions
+        if: steps.semantic.outputs.released == 'true'
+        run: python -m build

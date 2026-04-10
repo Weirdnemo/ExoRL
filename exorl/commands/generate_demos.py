@@ -16,7 +16,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--episodes", type=int, default=500, help="Number of episodes to collect"
     )
-    parser.add_argument("--out", default="demos/demos.npz", help="Output .npz file path")
+    parser.add_argument(
+        "--out", default="demos/demos.npz", help="Output .npz file path"
+    )
     parser.add_argument(
         "--presets-only",
         action="store_true",
@@ -117,7 +119,9 @@ def main(argv: list[str] | None = None) -> None:
             f"  obs_dim={10 if args.lite else args.obs_dim}  speed_ratio={args.speed_ratio}  "
             f"max_steps={args.max_steps}  lite={args.lite}"
         )
-        print(f"  {'presets only' if args.presets_only else 'presets + random (50/50)'}")
+        print(
+            f"  {'presets only' if args.presets_only else 'presets + random (50/50)'}"
+        )
         print(f"  Output: {args.out}\n")
         print(
             f"  {'ep':>5}  {'planet':<12}  {'ok':>4}  {'steps':>6}  "
@@ -163,7 +167,7 @@ def main(argv: list[str] | None = None) -> None:
         n_total += 1
         elapsed = time.time() - t0
 
-        if not args.quiet and (ep % 25 == 0 or ep < 5):
+        if not args.quiet and (ep % 51 == 0 or ep < 5):
             pct = n_success / max(n_total, 1) * 100
             print(
                 f"  {ep + 1:5d}  {planet_name:<12}  "
@@ -197,10 +201,11 @@ def main(argv: list[str] | None = None) -> None:
         print(f"  Pairs (obs,act): {len(obs_arr):,}  (successful episodes only)")
         print(f"  obs shape:  {obs_arr.shape}")
         print(f"  act shape:  {act_arr.shape}")
-        print(f"  Time:       {elapsed:.0f}s  ({n_total / max(elapsed, 1e-9):.1f} eps/s)")
+        print(
+            f"  Time:       {elapsed:.0f}s  ({n_total / max(elapsed, 1e-9):.1f} eps/s)"
+        )
         print(f"  Saved:      {args.out}")
 
 
 if __name__ == "__main__":
     main()
-

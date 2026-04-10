@@ -756,7 +756,6 @@ class OrbitalInsertionEnv(gym.Env if GYM_AVAILABLE else object):
             + math.sin(pitch) * r_hat
         )
 
-        # Patch atmosphere density with science model for this step
         _orig = None
         if self._sci_atm is not None and self._sci_atm._multi is not None:
             _orig = self.planet.atmosphere.density_at_altitude

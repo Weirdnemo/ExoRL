@@ -17,11 +17,12 @@ If you want guided walkthroughs:
 
 ### Dependencies / Installation
 
-ExoRL is a Python project. The reinforcement-learning scripts additionally rely on:
+ExoRL is a Python project with install extras for different usage modes:
 
-- `gymnasium` (Gym API)
-- `torch` (policy networks)
-- `stable-baselines3` (SAC baseline)
+- `exorl[rl]`: RL training/evaluation stack (`gymnasium`, `stable-baselines3`, `torch`)
+- `exorl[science]`: scientific analysis stack (`astropy`, plotting/science helpers)
+- `exorl[dev]`: local quality/release tooling (`pytest`, `ruff`, `build`, `python-semantic-release`)
+- `exorl[all]`: all of the above
 
 Recommended install (CPU PyTorch; use the CUDA variant if you need GPU):
 
@@ -29,27 +30,48 @@ Recommended install (CPU PyTorch; use the CUDA variant if you need GPU):
 python -m venv .venv
 source .venv/bin/activate
 
-# Core (science + visualization helpers)
+# Core package
 pip install -e .
 
 # RL scripts (SAC/BC/eval)
 pip install -e ".[rl]"
+
+# Optional science extensions
+pip install -e ".[science]"
+
+# Development toolchain
+pip install -e ".[dev]"
+
+# Everything
+pip install -e ".[all]"
 ```
 
 ### Releasing to PyPI (maintainers)
 
-This repo is set up for **Trusted Publishing** to PyPI via GitHub Actions.
+This repo uses **python-semantic-release** for version/changelog/release automation, and **manual Twine upload** for PyPI publishing.
 
-- **Trigger**: push a version tag like `v0.1.1`
-- **Workflow**: `.github/workflows/workflow.yml` builds and publishes automatically
+- **CI workflow**: `.github/workflows/ci.yml` validates matrix builds and install modes.
+- **Release workflow**: `.github/workflows/release.yml` runs on `main`.
+- On a releasable commit history, semantic-release:
+  - computes the next semver version,
+  - updates `pyproject.toml` + changelog,
+  - creates a GitHub release/tag,
+  - builds `dist/` artifacts (wheel + sdist).
+
+Then publish manually with Twine:
+
+```bash
+python -m pip install --upgrade twine
+twine check dist/*
+twine upload dist/*
+```
 
 Typical release:
 
 ```bash
-# 1) bump version in pyproject.toml
-# 2) commit the version bump
-git tag v0.1.1
-git push --tags
+# Use Conventional Commits in merged PRs.
+# Release automation runs from main and handles version/tag/release.
+# Publish to PyPI manually from dist/ using Twine.
 ```
 
 ### CLI shortcuts
